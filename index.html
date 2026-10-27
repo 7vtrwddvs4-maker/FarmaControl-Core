@@ -1,4 +1,2256 @@
-<!-- Librería CryptoJS para cifrado de datos clínicos -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Tratamientos - FarmaControl</title>
+  
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --cell-border: rgba(255, 255, 255, 0.08);
+      --panel-bg: rgba(0, 0, 0, 0.2);
+      --th-bg: rgba(0, 0, 0, 0.3);
+      --th-dark: rgba(0, 0, 0, 0.4);
+      --dropdown-bg: rgba(15, 32, 39, 0.95);
+      --select-bg: #1a2b33;
+      --hover-bg: rgba(255, 255, 255, 0.03);
+      --input-hover: rgba(255, 255, 255, 0.1);
+      --placeholder: rgba(255, 255, 255, 0.3);
+      
+      --text-main: #ffffff;
+      --text-muted: #b0bec5;
+      --accent-blue: #40c4ff;
+      --accent-green: #00e676;
+      --accent-red: #ff5252;
+      
+      --glass-blur: blur(15px);
+      --color-scheme: dark;
+    }
+
+    body.light-theme {
+      --bg-gradient: linear-gradient(135deg, #e0eafc, #cfdef3);
+      --glass-bg: rgba(255, 255, 255, 0.5);
+      --glass-border: rgba(255, 255, 255, 0.8);
+      --cell-border: rgba(0, 0, 0, 0.1);
+      --panel-bg: rgba(255, 255, 255, 0.4);
+      --th-bg: rgba(255, 255, 255, 0.5);
+      --th-dark: rgba(255, 255, 255, 0.8);
+      --dropdown-bg: rgba(240, 244, 248, 0.95);
+      --select-bg: #f8f9fa;
+      --hover-bg: rgba(0, 0, 0, 0.02);
+      --input-hover: rgba(255, 255, 255, 0.6);
+      --placeholder: rgba(0, 0, 0, 0.4);
+      
+      --text-main: #1c2833;
+      --text-muted: #546e7a;
+      --accent-blue: #0277bd;
+      --accent-green: #1b5e20;
+      --accent-red: #c62828;
+      
+      --color-scheme: light;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      margin: 0; padding: 15px; background: var(--bg-gradient); color: var(--text-main);
+      display: flex; gap: 20px; height: 100vh; box-sizing: border-box;
+      color-scheme: var(--color-scheme); transition: background 0.5s ease, color 0.5s ease;
+    }
+
+    * { transition: border-color 0.3s, background-color 0.3s; }
+
+    /* --- AISLAMIENTO CSS: CALCULADORA FARMAPERFIL EXACTO --- */
+    .fp-modal-content { background-color: #dce7f3; border-radius: 28px; box-shadow: 0 25px 60px rgba(0,0,0,0.55); overflow: hidden; display: flex; flex-direction: column; position: relative; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; border: 1px solid rgba(255,255,255,0.6); }
+    .fp-header-bar { background: linear-gradient(180deg, #ffffff 0%, #f4f8fc 100%); border-radius: 0 0 24px 24px; box-shadow: 0 4px 15px rgba(15, 32, 39, 0.06); padding: 18px 25px 16px 25px; z-index: 2; }
+    .fp-card { background: #f0f5fa; border-radius: 22px; padding: 22px; box-shadow: 0 8px 20px rgba(15, 32, 39, 0.05); border: 1px solid rgba(255,255,255,0.85); }
+    .fp-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #607d8b; font-size: 10px; font-weight: 800; cursor: pointer; min-width: 86px; padding: 10px 16px; border-radius: 14px; transition: all 0.2s ease; border: 1.5px solid transparent; letter-spacing: 0.5px; user-select: none; }
+    .fp-tab .material-icons-round { font-size: 22px; color: #546e7a; transition: 0.2s; }
+    .fp-tab:hover:not(.activa) { background: rgba(2, 119, 189, 0.05); color: #0277bd; }
+    .fp-tab.activa { background: #d0e8fc; color: #0277bd; border-color: #58b0f6; box-shadow: 0 6px 14px rgba(2, 119, 189, 0.16); }
+    .fp-tab.activa .material-icons-round { color: #0277bd; }
+    .fp-label { font-size: 10.5px; font-weight: 800; color: #0277bd; text-transform: uppercase; margin-bottom: 7px; display: block; letter-spacing: 0.5px; }
+    .fp-input-pill { display: flex; align-items: center; background: #ffffff !important; border: 1.5px solid transparent; border-radius: 12px; padding: 0 14px; height: 46px; margin-bottom: 16px; transition: 0.2s; box-sizing: border-box; width: 100%; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+    .fp-input-pill.focused { border-color: #0288d1 !important; box-shadow: 0 0 0 3px rgba(2, 136, 209, 0.18) !important; }
+    .fp-input-pill input, .fp-input-pill select { flex: 1; border: none !important; background: transparent !important; color: #1c2833 !important; font-size: 15px; font-weight: 800; text-align: center; outline: none !important; width: 100%; box-shadow: none !important; }
+    .fp-input-pill input::placeholder { color: #90a4ae !important; font-weight: 700; opacity: 1; }
+    .fp-icon { color: #0277bd; font-size: 20px; margin-right: 8px; opacity: 0.9; }
+    .fp-btn-blue { background: #0d6efd; background: linear-gradient(180deg, #1976d2 0%, #0d62b8 100%); color: #ffffff !important; border: none; border-radius: 12px; padding: 14px; font-size: 13px; font-weight: 900; width: 100%; cursor: pointer; box-shadow: 0 5px 14px rgba(25, 118, 210, 0.35); text-transform: uppercase; letter-spacing: 0.8px; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .fp-btn-blue:hover { filter: brightness(1.05); transform: translateY(-1px); }
+    .fp-btn-blue:active { transform: translateY(1px); box-shadow: none; }
+    .fp-key-btn { background: #ffffff; border: 1px solid rgba(255,255,255,0.9); border-radius: 12px; color: #1c2833; font-size: 20px; font-weight: 800; height: 54px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 8px rgba(15, 32, 39, 0.05); user-select: none; transition: 0.1s; }
+    .fp-key-btn:active { transform: scale(0.94); background: #f8f9fa; }
+    .fp-key-blue { background: #d7ecfb; color: #0277bd; border-color: #bce0fd; }
+    .fp-key-red { background: #fadadd; color: #d32f2f; border-color: #f8c3c8; }
+    .fp-key-next { background: #1b5e20; color: #ffffff; font-size: 13px; font-weight: 900; grid-column: span 3; border: none; display: flex; gap: 8px; letter-spacing: 0.6px; box-shadow: 0 5px 12px rgba(27, 94, 32, 0.35); height: 52px; margin-top: 2px; }
+    .fp-result { margin-top: 15px; padding: 15px; border-radius: 12px; text-align: center; font-size: 14px; font-weight: 700; display: none; line-height: 1.5; animation: aparecerFila 0.35s ease; }
+    .fp-res-green { color: #1b5e20; border: 2px solid #2e7d32; background: #e8f5e9; }
+    .fp-res-blue { color: #0277bd; border: 2px solid #0277bd; background: #e1f5fe; }
+    .fp-row { display: flex; gap: 12px; width: 100%; align-items: flex-start; }
+    .fp-col { flex: 1; min-width: 0; }
+
+    .glass-panel {
+      background: var(--glass-bg); backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border);
+      border-radius: 16px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .main-content {
+      position: relative; flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 20px;
+    }
+    
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.4); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.6); }
+
+    .header-grid {
+      display: grid; grid-template-columns: 240px 1fr 320px;
+      border: 1px solid var(--glass-border); border-radius: 12px 12px 0 0; background: var(--panel-bg);
+    }
+    .header-cell { border-right: 1px solid var(--glass-border); padding: 15px; display: flex; align-items: center; }
+    .header-cell:last-child { border-right: none; }
+    
+    .hospital-logo { font-size: 18px; font-weight: bold; color: var(--accent-blue); display: flex; align-items: center; gap: 8px; }
+    .title-cell { position: relative; font-size: 22px; font-weight: 800; justify-content: center; letter-spacing: 2px; color: var(--accent-green); }
+    
+    /* TEMA V2 - SELECTOR SEGMENTADO */
+    .theme-selector {
+      position: absolute; right: 15px; display: flex; background: var(--panel-bg); border-radius: 30px; padding: 4px; gap: 2px; border: 1px solid var(--glass-border);
+    }
+    .theme-btn {
+      background: transparent; border: none; color: var(--text-muted); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .theme-btn.active {
+      background: var(--accent-blue); color: #ffffff; box-shadow: 0 2px 10px rgba(64, 196, 255, 0.4); transform: scale(1.05);
+    }
+    .theme-btn:hover:not(.active) {
+      background: var(--hover-bg); color: var(--text-main); transform: scale(1.05);
+    }
+
+    /* NAVEGACIÓN V2 - PÍLDORAS ESTILO PROA */
+    .gestion-opciones { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; }
+    .gestion-card { 
+      background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 30px; padding: 10px 22px; 
+      text-align: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      display: flex; align-items: center; gap: 8px; color: var(--text-muted); user-select: none; -webkit-user-select: none;
+    }
+    body.light-theme .gestion-card { background: rgba(255, 255, 255, 0.7); border-color: rgba(0, 0, 0, 0.08); color: var(--text-muted); }
+    .gestion-card:hover { border-color: var(--accent-blue); background: rgba(64, 196, 255, 0.05); color: var(--text-main); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    body.light-theme .gestion-card:hover { color: var(--accent-blue); }
+    
+    /* CORRECCIÓN DE CONTRASTE: Fuerza el azul y texto blanco sin importar el tema */
+    body.light-theme .gestion-card.activa,
+    .gestion-card.activa { 
+      border-color: var(--accent-blue) !important; background: var(--accent-blue) !important; color: #ffffff !important; 
+      transform: translateY(-2px); box-shadow: 0 6px 15px rgba(64, 196, 255, 0.3);
+    }
+    body.light-theme .gestion-card.activa .material-icons-round,
+    .gestion-card.activa .material-icons-round { color: #ffffff !important; }
+    .gestion-card .titulo { font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+
+    /* INPUTS V2 - ESTILO PROA (Bordes suaves y redondeados) */
+    input[type="text"], input[type="number"], input[type="date"] {
+      border-radius: 16px !important;
+      transition: all 0.3s ease !important;
+    }
+    body.light-theme input[type="text"]:not(.patient-cell input), 
+    body.light-theme input[type="number"]:not(.patient-cell input) {
+      background-color: #f4f6f8 !important; /* Fondo suave para cajas en tema claro */
+      border-color: transparent !important;
+      color: #1c2833 !important;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus {
+      background-color: var(--glass-bg) !important;
+      box-shadow: 0 0 0 4px rgba(64, 196, 255, 0.15) !important;
+    }
+    .patient-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--glass-border);
+      border-top: none; border-radius: 0 0 12px 12px; background: var(--glass-bg); margin-bottom: 20px;
+    }
+    .patient-cell { position: relative; border: 1px solid var(--cell-border); padding: 12px 16px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+    .patient-cell:nth-last-child(2) { border-bottom-left-radius: 11px; }
+    .patient-cell:last-child { border-bottom-right-radius: 11px; }
+
+    .cell-label { font-size: 11px; color: var(--accent-blue); display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+    
+    .patient-cell input {
+      border: none; outline: none; width: 100%; font-size: 16px; background-color: transparent; color: var(--text-main); font-weight: 600; padding: 0 4px; box-sizing: border-box;
+    }
+    ::placeholder { color: var(--placeholder); }
+    
+    input[data-lista] { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%23888888'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 2px center; background-size: 20px; padding-right: 18px !important; cursor: pointer; }
+
+    .glass-dropdown {
+      position: absolute; top: calc(100% + 2px); left: 0; right: 0; z-index: 9999;
+      background: var(--dropdown-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border); border-radius: 8px; max-height: 220px; overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); display: none; padding: 5px 0;
+    }
+    .glass-dropdown div {
+      padding: 10px 15px; cursor: pointer; font-size: 14px; color: var(--text-main); font-weight: 600;
+      transition: background 0.2s; border-bottom: 1px solid var(--cell-border);
+    }
+    .glass-dropdown div:last-child { border-bottom: none; }
+    .glass-dropdown div:hover, .glass-dropdown div.opcion-activa {
+      background: var(--accent-blue); color: #ffffff;
+    }
+    /* Hace que la letra resaltada sea celeste por defecto, pero se vuelva blanca al seleccionarla */
+    .glass-dropdown div strong { color: var(--accent-blue); }
+    .glass-dropdown div:hover strong, .glass-dropdown div.opcion-activa strong { color: #ffffff; }
+
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+
+    table.med-grid { width: 100%; border-collapse: collapse; border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden; table-layout: fixed; }
+    .med-grid th, .med-grid td { border: 1px solid var(--cell-border); padding: 4px 2px; text-align: center; min-height: 34px; word-wrap: break-word; }
+    .med-grid th { background-color: var(--th-bg); font-size: 12px; color: var(--text-muted); }
+    .med-grid tbody tr:hover { background: var(--hover-bg); }
+
+    .farmacos-title { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 15px; color: var(--text-main); }
+
+    .btn-validar { background: linear-gradient(135deg, #00e676, #00c853); color: #000; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3); padding: 12px; font-size: 14px; letter-spacing: 0.5px; }
+    .btn-validar:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 230, 118, 0.4); }
+    
+    .estado-critico { background-color: rgba(255, 82, 82, 0.2) !important; color: #ff5252 !important; font-weight: 900; }
+    .estado-advertencia { background-color: rgba(255, 152, 0, 0.2) !important; color: #ff9800 !important; font-weight: 900; }
+    .estado-optimo { background-color: rgba(0, 230, 118, 0.15) !important; color: var(--accent-green) !important; font-weight: 900; }
+    .estado-terminado { background-color: rgba(144, 164, 174, 0.18) !important; color: #90a4ae !important; font-weight: 900; letter-spacing: 0.5px; }
+
+    /* --- MEJORAS DEL BUSCADOR --- */
+    #buscadorTabla:focus {
+      box-shadow: 0 0 0 4px rgba(64, 196, 255, 0.2) !important;
+      background: var(--input-hover) !important;
+      border-color: var(--accent-blue) !important;
+    }
+
+    /* --- ANIMACIÓN EN CASCADA REFINADA PARA LA TABLA (STAGGER) --- */
+    #cuerpoTabla tr {
+      transition: background-color 0.2s ease;
+    }
+    
+    .fila-animada {
+      /* "both" mantiene la fila oculta antes de que se cumpla su tiempo de retraso */
+      animation: aparecerFila 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    
+    @keyframes aparecerFila {
+      0% { 
+        opacity: 0; 
+        transform: translateY(10px); 
+      }
+      100% { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    }
+
+    /* --- MOTOR DEL INFORME DIRECTIVO Y REGLAS DE IMPRESIÓN --- */
+    .modal-informe {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--panel-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      z-index: 99999; display: none; overflow-y: auto;
+    }
+    .informe-a4 {
+      background: #ffffff; 
+      color: #000000; 
+      width: 210mm; 
+      min-height: 297mm; 
+      height: auto;
+      margin: 40px auto; 
+      padding: 20mm; 
+      box-shadow: 0 15px 50px rgba(0,0,0,0.5); 
+      border-radius: 8px; 
+      box-sizing: border-box; 
+      font-family: Arial, sans-serif; 
+      position: relative;
+    }
+    .informe-header { display: flex; justify-content: space-between; border-bottom: 3px solid #0277bd; padding-bottom: 15px; margin-bottom: 25px; }
+    .btn-cerrar-informe { position: fixed; top: 20px; right: 40px; background: var(--accent-red); color: white; border: none; border-radius: 30px; padding: 10px 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(255,82,82,0.4); z-index: 100000; }
+    .btn-imprimir-informe { position: fixed; top: 20px; right: 180px; background: #0277bd; color: white; border: none; border-radius: 30px; padding: 10px 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(2,119,189,0.4); z-index: 100000; }
+    
+    @media print {
+      body * { visibility: hidden; }
+      body, html { height: auto !important; overflow: visible !important; background-color: #ffffff !important; }
+      .modal-informe { display: block !important; position: absolute; left: 0; top: 0; width: 100%; height: auto !important; overflow: visible !important; background: white; }
+      .informe-a4, .informe-a4 * { visibility: visible; }
+      .informe-a4 { box-shadow: none; margin: 0; width: 100%; padding: 0; border: none; height: auto !important; overflow: visible !important; }
+      .no-print { display: none !important; }
+      .salto-impresion { page-break-before: always; break-before: page; }
+      table, tr { page-break-inside: avoid; }
+      @page { margin: 10mm; size: A4; }
+    }
+
+    /* --- ESTILOS CALCULADORA CLÍNICA --- */
+    .calc-row { display: flex; gap: 15px; width: 100%; align-items: flex-end; margin-bottom: 15px; }
+    .calc-col { flex: 1; min-width: 0; }
+    .calc-label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 8px; }
+    .calc-input-pill { display: flex; align-items: center; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 0 12px; height: 46px; }
+    .calc-input-pill input, .calc-input-pill select { flex: 1; border: none; background: transparent; color: var(--text-main); font-size: 15px; outline: none; font-weight: 700; width: 100%; text-align: center; }
+    .calc-input-pill select option { background: var(--select-bg); }
+    .btn-calc-action { background: linear-gradient(135deg, #1e88e5, #1565c0); color: white; border: none; border-radius: 30px; padding: 14px 0; font-size: 14px; font-weight: 900; width: 100%; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-transform: uppercase; letter-spacing: 1px;}
+    .btn-calc-action:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.3); }
+    .calc-result { margin-top: 20px; padding: 15px; border-radius: 16px; text-align: center; font-size: 15px; font-weight: 700; display: none; background: var(--panel-bg); border: 2px solid var(--accent-blue); animation: aparecerFila 0.4s ease; }
+    body.light-theme .calc-result { background: rgba(255,255,255,0.7); }
+
+    @media screen and (max-width: 1366px) {
+        .header-grid { grid-template-columns: 100px 1fr 200px !important; }
+        .title-cell { flex-direction: column !important; justify-content: center !important; align-items: center !important; font-size: 18px !important; line-height: 1.2 !important; text-align: center !important; }
+        .hospital-logo { font-size: 14px !important; }
+        .theme-toggle-btn { position: absolute !important; right: 15px !important; }
+        .main-content { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+        .patient-grid { min-width: 900px !important; }
+        table.med-grid { min-width: 1000px !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="cartelActualizacion" style="display: none; position: fixed; top: 25px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #1e88e5, #1565c0); color: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); z-index: 10000; align-items: center; gap: 20px; font-weight: bold; border: 2px solid #90caf9;">
+    <span class="material-icons-round" style="font-size: 32px; color: #ffeb3b;">system_update_alt</span>
+    <div style="text-align: left;">
+      <div style="font-size: 16px; letter-spacing: 0.5px;">¡Nueva Versión Disponible!</div>
+      <div style="font-size: 12px; font-weight: normal; margin-top: 4px; opacity: 0.9;">El administrador ha subido mejoras al sistema. Actualiza para continuar.</div>
+    </div>
+    <button onclick="location.reload(true);" style="background: #ffeb3b; color: #000; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: transform 0.2s;">Actualizar Ahora</button>
+  </div>
+
+  <!-- TOAST DE ÉXITO (ANIMACIÓN) -->
+  <div id="toastExito" style="position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #00e676, #00c853); color: #000; padding: 14px 28px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,230,118,0.4); font-weight: 900; font-size: 15px; display: flex; align-items: center; gap: 10px; z-index: 10000; transition: bottom 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); opacity: 0;">
+    <span class="material-icons-round" style="font-size: 26px;">check_circle</span> ¡Paciente Registrado con Éxito!
+  </div>
+
+  <div class="main-content">
+    
+    <div class="header-grid">
+      <div class="header-cell hospital-logo">
+        <img src="https://hospitalelpino.gob.cl/wphep/wp-content/uploads/2026/04/Logo-Redondo_2026.png" alt="Logo Institucional" style="height: 38px; width: auto; object-fit: contain; border-radius: 50%;">
+        FarmaControl
+      </div>
+      <div class="header-cell title-cell">
+        Control de Tratamientos
+      </div>
+      <div class="header-cell" style="position: relative;">
+        <div class="theme-selector">
+          <button class="theme-btn" id="btnThemeLight" onclick="applyThemeMode('light')" title="Modo Claro">
+            <span class="material-icons-round" style="font-size: 18px;">light_mode</span>
+          </button>
+          <button class="theme-btn active" id="btnThemeAuto" onclick="applyThemeMode('auto')" title="Automático (Detectar Sistema)">
+            <span class="material-icons-round" style="font-size: 18px;">brightness_auto</span>
+          </button>
+          <button class="theme-btn" id="btnThemeDark" onclick="applyThemeMode('dark')" title="Modo Oscuro">
+            <span class="material-icons-round" style="font-size: 18px;">dark_mode</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="gestion-opciones" style="margin-top: 20px;">
+      <div class="gestion-card activa" id="tabInhaladores" onclick="cambiarModulo('Inhaladores')">
+        <span class="material-icons-round" style="color: var(--accent-blue); font-size: 20px; transition: color 0.3s;">medication_liquid</span>
+        <span class="titulo">Inhaladores / Jarabes</span>
+      </div>
+      <div class="gestion-card" id="tabCasosEspeciales" onclick="cambiarModulo('CasosEspeciales')">
+        <span class="material-icons-round" style="color: var(--accent-blue); font-size: 20px; transition: color 0.3s;">fact_check</span>
+        <span class="titulo">Casos Especiales</span>
+      </div>
+      <div class="gestion-card" id="tabPsiquiatria" onclick="cambiarModulo('Psiquiatria')">
+        <span class="material-icons-round" style="color: var(--accent-blue); font-size: 20px; transition: color 0.3s;">psychology</span>
+        <span class="titulo">Psiquiatría</span>
+      </div>
+      <div class="gestion-card" id="tabAlbumina" onclick="cambiarModulo('Albumina')">
+        <span class="material-icons-round" style="color: var(--accent-blue); font-size: 20px; transition: color 0.3s;">water_drop</span>
+        <span class="titulo">Albúmina</span>
+      </div>
+      
+      <!-- BOTÓN CALCULADORA (Integrado al menú, abre el Modal) -->
+      <div class="gestion-card" onclick="abrirCalculadora()" style="background: rgba(64, 196, 255, 0.1); border-color: var(--accent-blue); border-width: 2px;">
+        <span class="material-icons-round" style="color: var(--accent-blue); font-size: 20px;">calculate</span>
+        <span class="titulo" style="color: var(--accent-blue);">Calculadora Clínica</span>
+      </div>
+      </div>
+      
+    <form id="formularioDispensacion" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px; position: relative; z-index: 100;">
+      
+      <!-- TARJETA 1: IDENTIFICACIÓN DEL PACIENTE -->
+      <div class="glass-panel" style="padding: 18px 20px; position: relative; z-index: 60;">
+        <div style="font-size: 15px; font-weight: 900; color: var(--accent-blue); display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+          <span class="material-icons-round">badge</span> Identificación del Paciente
+        </div>
+        <div class="patient-grid" style="border: none; background: transparent; margin-bottom: 0; gap: 10px;">
+          
+          <!-- RUT CON BUSCADOR INTEGRADO TIPO PROA -->
+          <div class="patient-cell" style="border: 1px solid var(--cell-border); border-radius: 8px; z-index: 20;">
+            <div class="cell-label">RUT</div>
+            <div style="position: relative; width: 100%; display: flex; align-items: center;">
+              <input type="text" id="rut" placeholder="Buscar..." required autocomplete="off" style="transition: color 0.3s ease; padding-right: 25px; box-sizing: border-box;">
+              <span class="material-icons-round" id="btnLimpiarRut" style="position: absolute; right: 0; color: var(--text-muted); font-size: 18px; cursor: pointer; display: none;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">close</span>
+              <div id="dd-rut" class="glass-dropdown" style="text-transform: uppercase;"></div>
+            </div>
+          </div>
+
+          <div class="patient-cell" style="border: 1px solid var(--cell-border); border-radius: 8px;">
+            <div class="cell-label">Nombres</div>
+            <input type="text" id="pacienteNombres" placeholder="Ej: Elsa" required autocomplete="off" style="box-sizing: border-box;">
+          </div>
+          
+          <div class="patient-cell" style="border: 1px solid var(--cell-border); border-radius: 8px;">
+            <div class="cell-label">Apellidos</div>
+            <input type="text" id="pacienteApellidos" placeholder="Ej: Capunta" required autocomplete="off" style="box-sizing: border-box;">
+          </div>
+
+          <div class="patient-cell" style="border: 1px solid var(--cell-border); border-radius: 8px;">
+            <div class="cell-label">Fecha Ingreso</div>
+            <input type="date" id="fechaDispensacion" required>
+          </div>
+
+          <div class="patient-cell span-2" style="border: 1px solid var(--cell-border); border-radius: 8px; z-index: 10;">
+            <div class="cell-label">Servicio Actual</div>
+            <input type="text" id="servicio" data-lista="true" placeholder="Seleccione..." required autocomplete="off" style="background-color: transparent;">
+            <div id="dd-servicio" class="glass-dropdown"></div> 
+          </div>
+
+          <div class="patient-cell span-2" style="border: 1px solid var(--cell-border); border-radius: 8px; z-index: 9;">
+            <div class="cell-label">Digitador Responsable</div>
+            <input type="text" id="digitador" data-lista="true" placeholder="Seleccione..." required autocomplete="off" style="background-color: transparent;">
+            <div id="dd-digitador" class="glass-dropdown"></div> 
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- TARJETA 2: ESQUEMA DE TRATAMIENTO -->
+      <div class="glass-panel" style="padding: 18px 20px; position: relative; z-index: 50;">
+        <div style="font-size: 15px; font-weight: 900; color: var(--accent-blue); display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <span class="material-icons-round">vaccines</span> Esquema de Tratamiento Inicial
+        </div>
+        
+        <!-- Contenedor Dinámico para Múltiples Fármacos -->
+        <div id="contenedorMedicamentos" style="display: flex; flex-direction: column; gap: 8px; position: relative;">
+          <!-- Las filas dinámicas se inyectan aquí -->
+        </div>
+
+        <div id="wrapperAgregarFila" style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" id="btnAgregarFila" style="background: transparent; color: var(--accent-blue); border: none; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 5px; transition: 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent-blue)'">
+            <span class="material-icons-round" style="font-size: 20px;">add_circle</span> Agregar otro medicamento
+          </button>
+        </div>
+      </div>
+
+      <!-- BOTÓN REGISTRAR V2 (ESTILO PROA) -->
+      <div style="display: flex; justify-content: center; margin-top: -5px; margin-bottom: 8px;">
+        <button type="submit" class="btn-validar" id="btnGuardar" style="width: 380px; max-width: 100%; border: none; border-radius: 30px; font-weight: 800; font-size: 14px; cursor: pointer; padding: 13px 20px; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: center; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.2);">
+          <span class="material-icons-round" style="font-size: 20px;">cloud_upload</span> Registrar en FarmaControl
+        </button>
+      </div>
+
+    </form>
+
+    <div class="glass-panel" style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div class="farmacos-title" id="tituloTablaDashboard">
+          <span class="material-icons-round" style="color: var(--accent-blue); margin-right: 8px; font-size: 22px; vertical-align: bottom;">medication_liquid</span> Seguimiento de Inhaladores y Jarabes
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 20px;">
+          <!-- BOTÓN DE INFORME DIRECTIVO (Solo visible en Albúmina) -->
+          <button id="btnAbrirInforme" type="button" onclick="abrirModalInforme()" style="display: none; background: rgba(64, 196, 255, 0.15); border: 1px solid var(--accent-blue); color: var(--accent-blue); border-radius: 20px; padding: 8px 16px; font-weight: 800; font-size: 13px; cursor: pointer; align-items: center; gap: 6px; transition: all 0.2s;">
+            <span class="material-icons-round" style="font-size: 18px;">analytics</span> Informes Clínicos
+          </button>
+          <label style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 13px; font-weight: 900; cursor: pointer; user-select: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-blue)'" onmouseout="this.style.color='var(--text-muted)'">
+            <input type="checkbox" id="filtroActivos" checked style="accent-color: var(--accent-blue); width: 16px; height: 16px; cursor: pointer;">
+            Ocultar Finalizados
+          </label>
+          <div style="position: relative; width: 340px;">
+            <span class="material-icons-round" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--accent-blue); font-size: 22px; pointer-events: none;">search</span>
+            <input type="text" id="buscadorTabla" placeholder="Buscar paciente por RUT o Nombre..." autocomplete="off" style="width: 100%; padding: 12px 45px 12px 45px; border-radius: 12px; border: 2px solid var(--accent-blue); background: var(--glass-bg); color: var(--text-main); outline: none; transition: all 0.3s ease; font-weight: 600; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); box-sizing: border-box;">
+            <span class="material-icons-round" id="btnLimpiarBuscador" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 20px; cursor: pointer; display: none; transition: color 0.2s ease;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'" title="Borrar búsqueda">close</span>
+          </div>
+        </div>
+      </div>
+      
+      <div style="flex: 1; overflow-y: auto;">
+        <table class="med-grid">
+          <thead id="encabezadoTabla">
+            </thead>
+          <tbody id="cuerpoTabla">
+            <tr>
+              <td colspan="7" style="padding: 20px; color: var(--text-muted);">Iniciando motor de carga...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div> <!-- Cierre main-content -->
+
+  <!-- MODAL CALCULADORA CLÍNICA (CLON FARMAPERFIL EXACTO) -->
+  <div id="modalCalculadora" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 32, 39, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 100000; align-items: center; justify-content: center;">
+    
+    <div class="fp-modal-content" style="width: 840px; max-width: 95%; max-height: 92vh;">
+      
+      <!-- Bloque Superior Unificado (Header + Pestañas estilo FarmaPerfil) -->
+      <div class="fp-header-bar">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div style="width: 34px;"></div>
+          <div style="display: flex; align-items: center; gap: 8px; color: #1b5e20; font-weight: 900; font-size: 20px; letter-spacing: 0.3px;">
+            <span class="material-icons-round" style="font-size: 24px; color: #2e7d32;">calculate</span> Calculadora Clínica
+          </div>
+          <button onclick="document.getElementById('modalCalculadora').style.display='none'" style="background: #6c757d; color: #fff; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: 0.2s;" onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
+            <span class="material-icons-round" style="font-size: 18px;">close</span>
+          </button>
+        </div>
+
+        <!-- Tabs Nav -->
+        <div style="display: flex; justify-content: center; gap: 18px;">
+           <div class="fp-tab sub-calc" id="subJarabe" onclick="activarSubCalc('JARABE')"><span class="material-icons-round">water_drop</span>GOTAS</div>
+           <div class="fp-tab activa sub-calc" id="subStock" onclick="activarSubCalc('STOCK')"><span class="material-icons-round">inventory</span>STOCK</div>
+           <div class="fp-tab sub-calc" id="subEsquema" onclick="activarSubCalc('ESQUEMA')"><span class="material-icons-round">trending_down</span>ESQUEMA</div>
+        </div>
+      </div>
+
+      <!-- Cuerpo Flex -->
+      <div style="display: flex; gap: 20px; padding: 22px 25px 25px 25px; overflow-y: auto; align-items: flex-start;">
+         
+         <!-- Columna Izquierda: Formularios -->
+         <div style="flex: 1; display: flex; flex-direction: column; gap: 18px;">
+            
+            <!-- MÓDULO 1: JARABE -->
+            <div id="calc-JARABE" class="fp-card" style="display: none;">
+              <div style="background: #d8ecfa; padding: 15px 15px 2px 15px; border-radius: 14px; margin-bottom: 18px; border: 1px solid #bce0fd;">
+                <label class="fp-label" style="margin-bottom: 10px;">CÁLCULO PEDIÁTRICO (OPCIONAL)</label>
+                <div class="fp-row">
+                  <div class="fp-col"><label class="fp-label">Peso Paciente</label><div class="fp-input-pill"><span class="material-icons-round fp-icon">child_care</span><input type="number" id="jarabePesoNino" placeholder="Ej: 12"></div></div>
+                  <div class="fp-col"><label class="fp-label">Indicación Médica</label><div class="fp-input-pill"><input type="number" id="jarabeMgKg" placeholder="mg/kg"></div></div>
+                </div>
+              </div>
+              <label class="fp-label">Fármaco (Líquidos y Gotas)</label>
+              <div class="fp-input-pill"><span class="material-icons-round fp-icon">medication_liquid</span><select id="selectJarabe" onchange="autoCompletarJarabe()"><option value="">Manual / Otro...</option></select></div>
+              <div class="fp-row" id="rowJarabeConc">
+                <div class="fp-col"><label class="fp-label" id="lblJarabeMg">Conc. (mg)</label><div class="fp-input-pill"><input type="number" id="jarabeMg" placeholder="250"></div></div>
+                <div class="fp-col"><label class="fp-label">En (mL)</label><div class="fp-input-pill"><input type="number" id="jarabeMl" placeholder="5"></div></div>
+              </div>
+              <div class="fp-row">
+                <div class="fp-col" id="colJarabeTotal"><label class="fp-label">Frasco (mL)</label><div class="fp-input-pill"><input type="number" id="jarabeTotal" placeholder="60"></div></div>
+                <div class="fp-col"><label class="fp-label">Frec. (Hrs)</label><div class="fp-input-pill"><input type="number" id="jarabeFrec" placeholder="8"></div></div>
+              </div>
+              <div class="fp-row">
+                <div class="fp-col" style="flex: 2;"><label class="fp-label" id="lblDosisReq">Dosis Requerida</label><div class="fp-input-pill"><span class="material-icons-round fp-icon">assignment</span><input type="number" id="jarabeDosis" placeholder="Ej: 100"></div></div>
+                <div class="fp-col" style="flex: 1;" id="colUnidadJarabe"><label class="fp-label">Unidad</label><div class="fp-input-pill"><select id="unidadJarabe"><option value="mg">mg</option><option value="ml">mL</option></select></div></div>
+              </div>
+              <div class="fp-row" id="rowGoteroFactor">
+                <div class="fp-col"><label class="fp-label" style="color: #d32f2f;">Gotas por 1 mL (Ver envase)</label><div class="fp-input-pill" style="border: 1.5px solid #f8c3c8;"><span class="material-icons-round fp-icon" style="color: #d32f2f;">opacity</span><input type="number" id="jarabeFactorGotas" placeholder="Ej: 20"></div></div>
+              </div>
+              <button class="fp-btn-blue" onclick="calcularJarabe()"><span class="material-icons-round" style="font-size: 18px;">water_drop</span> CALCULAR DOSIS</button>
+              <div id="resJarabe" class="fp-result fp-res-blue"></div>
+            </div>
+
+            <!-- MÓDULO 2: STOCK -->
+            <div id="calc-STOCK" class="fp-card">
+              <label class="fp-label">Medicamento</label>
+              <div class="fp-input-pill"><span class="material-icons-round fp-icon">medication</span><select id="selectMed" onchange="cargarDatosMed()"><option value="">Seleccione fármaco...</option></select></div>
+              <label class="fp-label" id="lblStockDosis">Puffs por vez</label>
+              <div class="fp-input-pill"><span class="material-icons-round fp-icon">air</span><input type="number" id="cantVez" placeholder="Ej: 2"></div>
+              <label class="fp-label">Frecuencia (Horas)</label>
+              <div class="fp-input-pill"><span class="material-icons-round fp-icon">schedule</span><input type="number" id="frecHoras" placeholder="Ej: 8"></div>
+              <label class="fp-label">Capacidad Envase</label>
+              <div class="fp-input-pill" style="background: #e9eff5 !important;"><span class="material-icons-round fp-icon" style="color: #78909c;">inventory_2</span><input type="number" id="totalEnvase" readonly placeholder="0" style="color: #546e7a !important;"></div>
+              <button class="fp-btn-blue" onclick="calcularDuracion()"><span class="material-icons-round" style="font-size: 18px;">inventory</span> CALCULAR AUTONOMÍA</button>
+              <div id="resInhala" class="fp-result fp-res-green"></div>
+            </div>
+
+            <!-- MÓDULO 3: ESQUEMA -->
+            <div id="calc-ESQUEMA" class="fp-card" style="display: none;">
+              <div style="background: #d8ecfa; padding: 15px; border-radius: 14px; margin-bottom: 18px; border: 1px solid #bce0fd;">
+                <label class="fp-label" style="margin-bottom: 8px;">Fármaco Base (Tapering)</label>
+                <div class="fp-input-pill" style="margin-bottom: 0;"><span class="material-icons-round fp-icon">medication</span><select id="esquemaFarmacoBase" style="font-weight: 900; color: #0277bd !important;"><option value="prednisona">Prednisona</option></select></div>
+              </div>
+              <div id="esquemaContenedor"></div>
+              <button class="fp-btn-blue" style="background: #ffffff; color: #0277bd !important; border: 2px dashed #90caf9; margin-bottom: 15px; box-shadow: none;" onclick="agregarFilaEsquema()"><span class="material-icons-round" style="font-size: 18px;">add_circle</span> AÑADIR ESCALÓN</button>
+              <button class="fp-btn-blue" onclick="calcularEsquema(true)"><span class="material-icons-round" style="font-size: 18px;">calculate</span> CALCULAR ESQUEMA TOTAL</button>
+              <div id="resEsquema" class="fp-result fp-res-green" style="text-align: left;"></div>
+            </div>
+
+         </div>
+         
+         <!-- Columna Derecha: Teclado -->
+         <div style="width: 285px; flex-shrink: 0;">
+            <div class="fp-card" style="padding: 20px; position: sticky; top: 0;">
+              <div style="text-align: center; font-size: 11px; font-weight: 800; color: #546e7a; letter-spacing: 1px; margin-bottom: 15px;">TECLADO CLÍNICO</div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <div class="fp-key-btn" onmousedown="teclear('1', event)">1</div>
+                <div class="fp-key-btn" onmousedown="teclear('2', event)">2</div>
+                <div class="fp-key-btn" onmousedown="teclear('3', event)">3</div>
+                <div class="fp-key-btn" onmousedown="teclear('4', event)">4</div>
+                <div class="fp-key-btn" onmousedown="teclear('5', event)">5</div>
+                <div class="fp-key-btn" onmousedown="teclear('6', event)">6</div>
+                <div class="fp-key-btn" onmousedown="teclear('7', event)">7</div>
+                <div class="fp-key-btn" onmousedown="teclear('8', event)">8</div>
+                <div class="fp-key-btn" onmousedown="teclear('9', event)">9</div>
+                <div class="fp-key-btn" onmousedown="teclear('.', event)">.</div>
+                <div class="fp-key-btn" onmousedown="teclear('0', event)">0</div>
+                <div class="fp-key-btn fp-key-blue" onmousedown="teclear('00', event)">00</div>
+                
+                <div class="fp-key-btn fp-key-blue" onmousedown="teclear('C', event)">C</div>
+                <div class="fp-key-btn fp-key-red" style="grid-column: span 2;" onmousedown="teclear('DEL', event)"><span class="material-icons-round">backspace</span></div>
+                
+                <div class="fp-key-btn fp-key-next" onmousedown="siguienteCelda(event)">SIGUIENTE <span class="material-icons-round" style="font-size: 18px;">arrow_forward</span></div>
+              </div>
+            </div>
+         </div>
+
+      </div>
+    </div>
+  </div>
+         
+  <script>
+    let moduloActivo = "Inhaladores";
+    let filaEnEdicion = null;
+    let carritoReceta = []; // Memoria del carrito temporal
+    let listaServicios = [];
+    let arsenalDigitadores = [];
+    let arsenalInhaladores = [];
+    let arsenalCasosEspeciales = [];
+    let arsenalPsiquiatria = [];
+    let arsenalMedicosAlbumina = []; // Memoria inteligente de médicos
+    
+    // --- CEREBRO CLÍNICO: PROTOCOLOS DE ALBÚMINA ---
+    const protocolosAlbumina = {
+      "Paracentesis de gran volumen (>5 L)": { dosis: "6-8 g por litro evacuado", maxG: 100, maxF: 10, maxDias: 999, alerta: "No requiere dosis repetidas salvo nuevo procedimiento." },
+      "Peritonitis bacteriana espontánea (PBE)": { dosis: "Día 1: 1,5 g/kg | Día 3: 1 g/kg", maxG: 200, maxF: 20, maxDias: 3, alerta: "Administrar junto con antibióticos." },
+      "Síndrome hepatorrenal (SHR-AKI)": { dosis: "Día 1-2: 1 g/kg/día | Día 3+: 25-50 g/día", maxG: 450, maxF: 45, maxDias: 10, alerta: "Asociar a terlipresina. Suspender tras 7 días sin respuesta." },
+      "Shock séptico": { dosis: "60 g/24 horas", maxG: 180, maxF: 18, maxDias: 3, alerta: "Segunda línea. No constituye cristaloides." },
+      "Hipotensión intradialítica": { dosis: "20-30 g/sesión", maxG: 30, maxF: 3, maxDias: 999, alerta: "Reservar para pacientes refractarios a solución salina." },
+      "Edema severo con hipoalbuminemia": { dosis: "20-60 g/día", maxG: 120, maxF: 12, maxDias: 2, alerta: "Solo si albúmina < 2,5 g/dL. Suspender al mejorar edema." },
+      "Gran quemado (>20% SCT) y NET": { dosis: "10-20 g/cada 20 min", maxG: 9999, maxF: 999, maxDias: 999, alerta: "Complemento de cristaloides insuficientes." },
+      "Otro (Fuera de protocolo)": { dosis: "Según indicación médica", maxG: 999, maxF: 999, maxDias: 999, alerta: "⚠️ USO NO PROTOCOLIZADO. Asegúrese de registrar el diagnóstico o motivo en el campo rojo." }
+    };
+
+    // --- MOTOR INTELIGENTE DE TEMA V2 (DÍA/NOCHE/AUTO) ---
+    let currentThemeMode = localStorage.getItem('farmaPerfilTheme') || 'auto';
+
+    function applySavedTheme() {
+      applyThemeMode(currentThemeMode);
+      
+      // Escucha cambios del sistema operativo en tiempo real (Si Windows pasa a modo oscuro, la app también)
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (currentThemeMode === 'auto') applyThemeMode('auto');
+      });
+    }
+
+    function applyThemeMode(mode) {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isLight = mode === 'light' || (mode === 'auto' && !prefersDark);
+
+      if (isLight) document.body.classList.add('light-theme');
+      else document.body.classList.remove('light-theme');
+
+      // Actualiza visualmente el selector segmentado
+      document.getElementById("btnThemeLight").classList.remove("active");
+      document.getElementById("btnThemeAuto").classList.remove("active");
+      document.getElementById("btnThemeDark").classList.remove("active");
+
+      if (mode === 'light') document.getElementById("btnThemeLight").classList.add("active");
+      else if (mode === 'dark') document.getElementById("btnThemeDark").classList.add("active");
+      else document.getElementById("btnThemeAuto").classList.add("active");
+
+      localStorage.setItem('farmaPerfilTheme', mode);
+      currentThemeMode = mode;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      applySavedTheme(); 
+      
+      const inputFecha = document.getElementById("fechaDispensacion");
+      inputFecha.valueAsDate = new Date();
+      
+      let diaActualRegistrado = new Date().toDateString(); 
+      let versionLocalApp = null; // Memoria para la versión actual del computador
+      
+      // Iniciamos pidiendo la versión en vivo y los datos maestros
+      google.script.run.withSuccessHandler(v => versionLocalApp = v).comprobarVersionEnVivo();
+      google.script.run.withSuccessHandler(inicializarAplicacion).obtenerDatosMaestro();
+
+      setInterval(() => {
+        const fechaRealActual = new Date();
+        if (fechaRealActual.toDateString() !== diaActualRegistrado) {
+          inputFecha.valueAsDate = fechaRealActual; 
+          diaActualRegistrado = fechaRealActual.toDateString(); 
+        }
+
+        // --- NUEVO: VIGILANTE DE ACTUALIZACIONES ---
+        if (versionLocalApp) {
+          google.script.run.withSuccessHandler(versionServidor => {
+            if (versionServidor && versionServidor !== versionLocalApp) {
+              document.getElementById("cartelActualizacion").style.display = "flex";
+            }
+          }).comprobarVersionEnVivo();
+        }
+
+        const buscador = document.getElementById("buscadorTabla");
+        if (buscador && buscador.value.trim() === "") {
+          google.script.run
+            .withSuccessHandler(renderizarTabla)
+            .obtenerRegistrosUniversal(moduloActivo);
+        }
+      }, 120000);
+    });
+
+    function inicializarAplicacion(respuesta) {
+      if (!respuesta.exito) { alert("Error al inicializar la base de datos."); return; }
+      
+      listaServicios = respuesta.servicios;
+      arsenalDigitadores = respuesta.digitadores;
+      arsenalInhaladores = respuesta.inhaladores;
+      arsenalCasosEspeciales = respuesta.casosEspeciales;
+      arsenalPsiquiatria = respuesta.psiquiatria;
+      arsenalMedicosAlbumina = respuesta.medicosAlbumina || [];
+
+      initCustomDropdown("servicio", "dd-servicio", () => listaServicios);
+      initCustomDropdown("digitador", "dd-digitador", () => arsenalDigitadores);
+      
+      // La inicialización del "medicamento" se eliminó porque ahora las filas lo generan dinámicamente
+
+      cambiarModulo("Inhaladores");
+    }
+
+    function initCustomDropdown(inputId, dropdownId, getArrayCallback) {
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      let currentFocus = -1;
+
+      input.addEventListener("input", function() {
+        const val = this.value;
+        dropdown.innerHTML = "";
+        if (!val) { dropdown.style.display = "none"; return; }
+        currentFocus = -1;
+        
+        const arrayOriginal = getArrayCallback();
+        let matches = arrayOriginal.filter(item => item.toLowerCase().includes(val.toLowerCase()));
+        
+        matches.sort((a, b) => {
+          let aStarts = a.toLowerCase().startsWith(val.toLowerCase()) ? -1 : 1;
+          let bStarts = b.toLowerCase().startsWith(val.toLowerCase()) ? -1 : 1;
+          return aStarts - bStarts;
+        });
+
+        if (matches.length > 0) {
+          matches.forEach((match, index) => {
+            let div = document.createElement("div");
+            const regex = new RegExp(`(${val})`, "gi");
+            div.innerHTML = match.replace(regex, "<strong>$1</strong>"); // Ahora el color lo controla el CSS
+            
+            div.addEventListener("click", function() {
+              input.value = match;
+              dropdown.style.display = "none";
+              input.dispatchEvent(new Event("input")); // Activa el cálculo automático de la fila dinámica
+            });
+            dropdown.appendChild(div);
+          });
+          dropdown.style.display = "block";
+        } else {
+          dropdown.style.display = "none";
+        }
+      });
+
+      // Al hacer clic en el input, muestra todas las opciones siempre (tenga texto o no)
+      input.addEventListener("click", function() {
+        dropdown.innerHTML = "";
+        const arrayCompleto = getArrayCallback();
+        arrayCompleto.forEach(item => {
+          let div = document.createElement("div");
+          div.innerHTML = item;
+          
+          // Si el ítem es el que ya está escrito, lo marcamos suavemente
+          if (this.value === item) div.style.background = "rgba(64, 196, 255, 0.1)";
+          
+          div.addEventListener("click", function() {
+            input.value = item;
+            dropdown.style.display = "none";
+            input.dispatchEvent(new Event("input")); // Desencadena el cálculo automático de filas dinámicas
+          });
+          dropdown.appendChild(div); // <- ESTA ES LA LÍNEA QUE FALTABA
+        });
+        dropdown.style.display = "block";
+      });
+
+      input.addEventListener("keydown", function(e) {
+        let items = dropdown.getElementsByTagName("div");
+        if (e.key === "ArrowDown") {
+          currentFocus++; addActive(items);
+        } else if (e.key === "ArrowUp") {
+          currentFocus--; addActive(items);
+        } else if (e.key === "Enter" || e.key === "Tab") {
+          if (dropdown.style.display === "block" && items.length > 0) {
+            e.preventDefault();
+            if (currentFocus > -1) items[currentFocus].click();
+            else items[0].click();
+          }
+        }
+      });
+
+      function addActive(items) {
+        if (!items) return;
+        removeActive(items);
+        if (currentFocus >= items.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = (items.length - 1);
+        items[currentFocus].classList.add("opcion-activa");
+        items[currentFocus].scrollIntoView({block: "nearest"});
+      }
+      function removeActive(items) {
+        for (let i = 0; i < items.length; i++) items[i].classList.remove("opcion-activa");
+      }
+
+      document.addEventListener("click", function (e) {
+        if (e.target !== input && e.target !== dropdown) {
+          dropdown.style.display = "none";
+        }
+      });
+    }
+
+    let contadorFilas = 0;
+
+    function cambiarModulo(nuevoModulo) {
+      moduloActivo = nuevoModulo;
+      filaEnEdicion = null;
+      
+      // Mostrar/Ocultar botón de Informes Clínicos
+      const btnInforme = document.getElementById("btnAbrirInforme");
+      if (btnInforme) {
+        btnInforme.style.display = (moduloActivo === "Albumina" || moduloActivo === "Inhaladores") ? "flex" : "none";
+      }
+      
+      const btnG = document.getElementById("btnGuardar");
+      if (btnG) { 
+        btnG.innerHTML = `<span class="material-icons-round" style="font-size: 22px;">cloud_upload</span> Registrar en FarmaControl`; 
+        btnG.style.background = "linear-gradient(135deg, #00e676, #00c853)"; 
+        btnG.disabled = false;
+      }
+
+      document.querySelectorAll(".gestion-card").forEach(c => c.classList.remove("activa"));
+      if(moduloActivo === "Inhaladores") document.getElementById("tabInhaladores").classList.add("activa");
+      if(moduloActivo === "CasosEspeciales") document.getElementById("tabCasosEspeciales").classList.add("activa");
+      if(moduloActivo === "Psiquiatria") document.getElementById("tabPsiquiatria").classList.add("activa");
+      if(moduloActivo === "Albumina") document.getElementById("tabAlbumina").classList.add("activa");
+
+      document.getElementById("contenedorMedicamentos").innerHTML = "";
+      contadorFilas = 0;
+      agregarFilaMedicamento(); 
+
+      // --- RESTAURAR ENCABEZADOS DE TABLA ---
+      const encabezadoTabla = document.getElementById("encabezadoTabla");
+      const tituloTabla = document.getElementById("tituloTablaDashboard");
+      
+      if (moduloActivo === "Inhaladores") {
+        tituloTabla.innerHTML = `<span class="material-icons-round" style="color: var(--accent-blue); margin-right: 8px; font-size: 22px; vertical-align: bottom;">medication_liquid</span> Seguimiento de Inhaladores y Jarabes`;
+        encabezadoTabla.innerHTML = `
+          <tr>
+            <th style="width: 10%;">Fecha Disp.</th>
+            <th style="width: 22%;">Paciente</th>
+            <th style="width: 12%;">Servicio</th>
+            <th style="width: 20%;">Medicamento</th>
+            <th style="width: 14%;">Posología</th>
+            <th style="width: 10%;">Fecha Fin Est.</th>
+            <th style="width: 8%;">Días Restantes</th>
+            <th style="width: 4%;">Acción</th>
+          </tr>`;
+      } else if (moduloActivo === "Albumina") {
+        tituloTabla.innerHTML = `<span class="material-icons-round" style="color: var(--accent-blue); margin-right: 8px; font-size: 22px; vertical-align: bottom;">water_drop</span> Seguimiento Protocolizado de Albúmina`;
+        encabezadoTabla.innerHTML = `
+          <tr>
+            <th style="width: 9%;">Fecha Disp.</th>
+            <th style="width: 18%;">Paciente</th>
+            <th style="width: 8%;">Servicio</th>
+            <th style="width: 16%;">Diagnóstico Protocolo</th>
+            <th style="width: 25%;">Frascos Despachados</th>
+            <th style="width: 12%;">Progreso del Tratamiento</th>
+            <th style="width: 8%;">Estado</th>
+            <th style="width: 4%;">Acción</th>
+          </tr>`;
+      } else {
+        tituloTabla.innerHTML = moduloActivo === "CasosEspeciales" ? 
+          `<span class="material-icons-round" style="color: var(--accent-blue); margin-right: 8px; font-size: 22px; vertical-align: bottom;">fact_check</span> Autorizaciones de Casos Especiales` : 
+          `<span class="material-icons-round" style="color: var(--accent-blue); margin-right: 8px; font-size: 22px; vertical-align: bottom;">psychology</span> Control de Psiquiatría`;
+        encabezadoTabla.innerHTML = `
+          <tr>
+            <th style="width: 12%;">Fecha Disp.</th>
+            <th style="width: 26%;">Paciente</th>
+            <th style="width: 15%;">Servicio</th>
+            <th style="width: 22%;">Medicamento</th>
+            <th style="width: 20%;">Médico Tratante</th>
+            <th style="width: 5%;">Acción</th>
+          </tr>`;
+      }
+
+      document.getElementById("cuerpoTabla").innerHTML = `<tr><td colspan="8" style="color: var(--text-muted); padding: 15px;">Cargando registros de ${moduloActivo}...</td></tr>`;
+      google.script.run.withSuccessHandler(renderizarTabla).obtenerRegistrosUniversal(moduloActivo);
+    }
+
+    // --- LÓGICA DE FILAS DINÁMICAS ESTILO PROA ---
+    function agregarFilaMedicamento(datos = null) {
+      const id = contadorFilas++;
+      const isEdit = datos !== null;
+      
+      const divFila = document.createElement("div");
+      divFila.className = "fila-medicamento";
+      divFila.id = `filaMed_${id}`;
+      divFila.style.display = "grid";
+      divFila.style.gap = "10px";
+      divFila.style.alignItems = "end";
+      divFila.style.background = "var(--hover-bg)";
+      divFila.style.padding = "12px 15px";
+      divFila.style.borderRadius = "8px";
+      divFila.style.border = "1px solid var(--glass-border)";
+      
+      divFila.style.position = "relative";
+      divFila.style.zIndex = 1000 - id;
+
+      // PROPORCIONES V2.2: Equilibrio visual entre el selector y las cajas de números
+      if (moduloActivo === "Inhaladores") {
+        divFila.style.gridTemplateColumns = "2fr 100px 140px 140px 40px";
+      } else if (moduloActivo === "Albumina") {
+        divFila.style.gridTemplateColumns = "1.2fr 2fr 120px 40px";
+      } else {
+        divFila.style.gridTemplateColumns = "2fr 2fr 40px";
+      }
+
+      let htmlFila = "";
+
+      if (moduloActivo === "Albumina") {
+        htmlFila += `
+          <div>
+            <div style="font-size: 10px; color: var(--accent-blue); font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Medicamento</div>
+            <input type="text" id="medicamento_${id}" readonly style="width: 100%; background-color: var(--glass-bg); border: 1px solid transparent; border-radius: 6px; padding: 10px; color: var(--accent-blue); font-weight: 900; outline: none; font-size: 13px; box-sizing: border-box;" value="Albúmina 10 g (20% En 50 mL)">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="position: relative;">
+              <div style="font-size: 10px; color: var(--accent-blue); font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Diagnóstico Protocolo</div>
+              <input type="text" id="diagnostico_${id}" data-lista="true" placeholder="Seleccione el diagnóstico..." required autocomplete="off" style="width: 100%; background-color: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 6px; padding: 10px; color: var(--text-main); outline: none; font-size: 14px; font-weight: 600; box-sizing: border-box;" value="${(isEdit && !protocolosAlbumina[datos.diagnostico]) ? 'Otro (Fuera de protocolo)' : (isEdit ? datos.diagnostico : '')}">
+              <div id="dd-diagnostico_${id}" class="glass-dropdown"></div>
+            </div>
+            <input type="text" id="diagnosticoOtro_${id}" placeholder="Especifique diagnóstico o motivo..." autocomplete="off" style="display: ${(isEdit && !protocolosAlbumina[datos.diagnostico]) ? 'block' : 'none'}; width: 100%; background-color: rgba(255, 82, 82, 0.1); border: 1px solid var(--accent-red); border-radius: 6px; padding: 8px 10px; color: var(--text-main); outline: none; font-size: 13px; font-weight: 600; box-sizing: border-box;" value="${(isEdit && !protocolosAlbumina[datos.diagnostico]) ? datos.diagnostico.replace('Otro: ', '') : ''}">
+          </div>
+          <div>
+            <div style="font-size: 10px; color: var(--accent-blue); font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Frascos (Hoy)</div>
+            <input type="number" id="frascosDespacho_${id}" required min="1" style="width: 100%; background-color: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 6px; padding: 10px; color: var(--accent-green); outline: none; font-size: 14px; font-weight: 900; text-align: center; box-sizing: border-box;" value="${isEdit ? datos.frascos : '1'}">
+          </div>
+          <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-top: 5px; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--cell-border);">
+            <div style="position: relative;">
+              <div style="font-size: 10px; color: var(--accent-blue); font-weight: 700; margin-bottom: 4px; text-transform: uppercase;">Médico Tratante (Requerido)</div>
+              <input type="text" id="medicoAlbumina_${id}" required autocomplete="off" placeholder="Escriba el nombre para buscar..." style="width: 100%; background-color: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 6px; padding: 10px; color: var(--text-main); outline: none; font-size: 14px; font-weight: 600; box-sizing: border-box;" value="${isEdit ? (datos.medicoTratante || '') : ''}">
+              <div id="dd-medicoAlbumina_${id}" class="glass-dropdown"></div>
+            </div>
+            <div style="position: relative;">
+              <div style="font-size: 10px; color: var(--accent-blue); font-weight: 700; margin-bottom: 4px; text-transform: uppercase;">RUT Médico</div>
+              <input type="text" id="rutMedicoAlbumina_${id}" required autocomplete="off" placeholder="Ej: 11111111-1" style="width: 100%; background-color: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 6px; padding: 10px; color: var(--accent-green); outline: none; font-size: 14px; font-weight: 900; text-align: center; box-sizing: border-box;" value="${isEdit ? (datos.rutMedico || '') : ''}">
+              <div id="dd-rutMedicoAlbumina_${id}" class="glass-dropdown"></div>
+            </div>
+          </div>
+        `;
+      } else {
+        htmlFila += `
+          <div style="position: relative;">
+            <div style="font-size: 10px; color: var(--accent-blue); font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Medicamento</div>
+            <input type="text" id="medicamento_${id}" data-lista="true" placeholder="Buscar..." required autocomplete="off" style="width: 100%; background-color: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 6px; padding: 10px; color: var(--text-main); outline: none; font-size: 14px; font-weight: 600; box-sizing: border-box;" value="${isEdit ? datos.medicamento : ''}">
+            <div id="dd-medicamento_${id}" class="glass-dropdown"></div>
+          </div>
+        `;
+      }
+
+      if (moduloActivo === "Inhaladores") {
+        htmlFila += `
+          <div>
+            <div style="font-size: 10px; color: var(--accent-blue); font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Frasco</div>
+            <input type="number" id="dosisTotales_${id}" readonly style="width: 100%; background-color: var(--glass-bg); border: 1px solid transparent; border-radius: 6px; color: var(--accent-blue); font-weight: 900; padding: 10px; text-align: center; outline: none; font-size: 14px; box-sizing: border-box;" tabindex="-1" value="${isEdit ? datos.dosisTotales : ''}">
+          </div>
+          <div>
+            <div style="font-size: 10px; color: var(--accent-blue); font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Dosis</div>
+            <div style="display: flex; align-items: center; background-color: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 6px; padding: 0 10px; box-sizing: border-box;">
+              <input type="number" id="dosisPuff_${id}" step="0.1" required style="width: 100%; border: none; background-color: transparent; padding: 10px 0; color: var(--accent-blue); outline: none; text-align: center; font-size: 15px; font-weight: 900;" value="${isEdit ? datos.dosisPuff : ''}">
+              <span id="suffixDosis_${id}" style="font-size: 12px; color: var(--text-muted); font-weight: bold; margin-left: 4px;">Puff</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 10px; color: var(--accent-blue); font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Frecuencia</div>
+            <div style="display: flex; align-items: center; background-color: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 6px; padding: 0 10px; box-sizing: border-box;">
+              <span style="font-size: 12px; color: var(--accent-green); font-weight: bold; margin-right: 4px;">c/</span>
+              <input type="number" id="frecuencia_${id}" required style="width: 100%; border: none; background-color: transparent; padding: 10px 0; color: var(--accent-blue); outline: none; text-align: center; font-size: 15px; font-weight: 900;" value="${isEdit ? datos.frecuencia : ''}">
+              <span style="font-size: 12px; color: var(--text-muted); font-weight: bold; margin-left: 4px;">Hrs</span>
+            </div>
+          </div>
+        `;
+      } else if (moduloActivo !== "Albumina") {
+        htmlFila += `
+          <div>
+            <div style="font-size: 10px; color: var(--accent-blue); font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Médico Tratante</div>
+            <input type="text" id="medicoTratante_${id}" required autocomplete="off" placeholder="Ej: Dr. Garibaldi" style="width: 100%; background-color: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 6px; padding: 10px; color: var(--text-main); outline: none; font-size: 14px; font-weight: 600; box-sizing: border-box;" value="${isEdit ? datos.medicoTratante : ''}">
+          </div>
+        `;
+      }
+
+      let btnEliminar = `<button type="button" class="btn-eliminar-fila" onclick="eliminarFila(${id})" style="background: rgba(255, 82, 82, 0.1); border: 1px solid rgba(255,82,82,0.3); border-radius: 6px; height: 38px; width: 38px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #ff5252; transition: all 0.2s;" onmouseover="this.style.background='#ff5252'; this.style.color='#fff';" onmouseout="this.style.background='rgba(255, 82, 82, 0.1)'; this.style.color='#ff5252';" title="Eliminar"><span class="material-icons-round" style="font-size: 20px;">delete</span></button>`;
+      htmlFila += `<div style="display:flex; justify-content:flex-end; align-items: flex-end; padding-bottom: 1px;">${btnEliminar}</div>`;
+      
+      // PANEL DE ALERTA DE ALBÚMINA
+      if (moduloActivo === "Albumina") {
+        htmlFila += `
+          <div id="alertaProtocolo_${id}" style="display: none; grid-column: 1 / -1; margin-top: 5px; background: rgba(255, 152, 0, 0.15); border: 1px solid rgba(255, 152, 0, 0.4); border-radius: 8px; padding: 12px; font-size: 12px; line-height: 1.4;">
+            <div style="color: #ff9800; font-weight: 900; margin-bottom: 4px; font-size: 13px; display: flex; align-items: center; gap: 4px;"><span class="material-icons-round" style="font-size: 16px;">policy</span> RESTRICCIONES DEL PROTOCOLO SELECCIONADO</div>
+            <div style="color: var(--text-main);"><strong style="color: var(--accent-blue);">Posología:</strong> <span id="txtDosis_${id}"></span> | <strong style="color: var(--accent-blue);">Límite Total:</strong> <span id="txtTotal_${id}"></span></div>
+            <div style="color: var(--text-main); margin-top: 2px;"><strong style="color: var(--accent-blue);">Consideraciones:</strong> <span id="txtConsideraciones_${id}"></span></div>
+          </div>
+        `;
+      }
+      
+      divFila.innerHTML = htmlFila;
+      document.getElementById("contenedorMedicamentos").appendChild(divFila);
+
+      if (moduloActivo === "Albumina") {
+        initCustomDropdown(`diagnostico_${id}`, `dd-diagnostico_${id}`, () => Object.keys(protocolosAlbumina));
+        
+        document.getElementById(`diagnostico_${id}`).addEventListener("input", function() {
+          const diag = this.value;
+          const alertaPanel = document.getElementById(`alertaProtocolo_${id}`);
+          const campoOtro = document.getElementById(`diagnosticoOtro_${id}`);
+          
+          if (diag === "Otro (Fuera de protocolo)") {
+            campoOtro.style.display = "block";
+            campoOtro.required = true;
+          } else {
+            campoOtro.style.display = "none";
+            campoOtro.required = false;
+            campoOtro.value = "";
+          }
+
+          if (protocolosAlbumina[diag]) {
+            const proto = protocolosAlbumina[diag];
+            document.getElementById(`txtDosis_${id}`).innerText = proto.dosis;
+            document.getElementById(`txtTotal_${id}`).innerText = `${proto.maxG}g (${proto.maxF} frascos) en ${proto.maxDias === 999 ? 'tiempo indefinido' : proto.maxDias + ' días'}`;
+            document.getElementById(`txtConsideraciones_${id}`).innerText = proto.alerta;
+            alertaPanel.style.display = "block";
+          } else {
+            alertaPanel.style.display = "none";
+          }
+        });
+        
+        if(isEdit) document.getElementById(`diagnostico_${id}`).dispatchEvent(new Event("input"));
+        
+        // 🌟 LÓGICA DE AUTOCOMPLETADO BIDIRECCIONAL (MÉDICO Y RUT)
+        const inputMed = document.getElementById(`medicoAlbumina_${id}`);
+        const inputRutMed = document.getElementById(`rutMedicoAlbumina_${id}`);
+        const ddMed = document.getElementById(`dd-medicoAlbumina_${id}`);
+        const ddRutMed = document.getElementById(`dd-rutMedicoAlbumina_${id}`);
+        
+        let focoMed = -1;
+        let focoRut = -1;
+
+        function renderSugerenciasMed(val, dropdownActivo, esRut) {
+          dropdownActivo.innerHTML = "";
+          if (esRut) focoRut = -1; else focoMed = -1; // Reinicia el foco al escribir
+          
+          if (!val) { dropdownActivo.style.display = "none"; return; }
+          
+          let busquedaLimpia = val.replace(/[^A-Z0-9K]/gi, '').toUpperCase();
+          
+          let matches = arsenalMedicosAlbumina.filter(m => {
+            let nombreLimpio = m.nombre.replace(/[^A-Z0-9K]/gi, '').toUpperCase();
+            let rutLimpio = m.rut.replace(/[^0-9K]/gi, '').toUpperCase();
+            return nombreLimpio.includes(busquedaLimpia) || rutLimpio.includes(busquedaLimpia);
+          });
+          
+          if (matches.length > 0) {
+            matches.slice(0, 6).forEach(match => {
+              let div = document.createElement("div");
+              div.innerHTML = `<strong>${match.nombre}</strong> <span style="font-size:10px; opacity:0.8;">(${match.rut})</span>`;
+              div.style.padding = "10px 15px"; div.style.borderBottom = "1px solid var(--cell-border)"; div.style.cursor = "pointer";
+              
+              div.addEventListener("click", function() {
+                inputMed.value = match.nombre;
+                inputRutMed.value = match.rut;
+                dropdownActivo.style.display = "none";
+              });
+              div.addEventListener("mouseover", () => div.style.background = "var(--hover-bg)");
+              div.addEventListener("mouseout", () => div.style.background = "transparent");
+              dropdownActivo.appendChild(div);
+            });
+            dropdownActivo.style.display = "block";
+          } else { dropdownActivo.style.display = "none"; }
+        }
+
+        // Función para mover el sombreado con las flechas
+        function moverFoco(items, currentFocus) {
+          if (!items) return currentFocus;
+          for (let i = 0; i < items.length; i++) items[i].classList.remove("opcion-activa");
+          if (currentFocus >= items.length) currentFocus = 0;
+          if (currentFocus < 0) currentFocus = (items.length - 1);
+          items[currentFocus].classList.add("opcion-activa");
+          items[currentFocus].scrollIntoView({block: "nearest"});
+          return currentFocus;
+        }
+
+        // Navegación con teclado para la caja del Médico
+        inputMed.addEventListener("keydown", function(e) {
+          let items = ddMed.getElementsByTagName("div");
+          if (e.key === "ArrowDown") { focoMed++; focoMed = moverFoco(items, focoMed); } 
+          else if (e.key === "ArrowUp") { focoMed--; focoMed = moverFoco(items, focoMed); } 
+          else if (e.key === "Enter" || e.key === "Tab") {
+            if (ddMed.style.display === "block" && items.length > 0) {
+              e.preventDefault();
+              if (focoMed > -1) items[focoMed].click();
+              else items[0].click();
+            }
+          }
+        });
+
+        // Navegación con teclado para la caja del RUT
+        inputRutMed.addEventListener("keydown", function(e) {
+          let items = ddRutMed.getElementsByTagName("div");
+          if (e.key === "ArrowDown") { focoRut++; focoRut = moverFoco(items, focoRut); } 
+          else if (e.key === "ArrowUp") { focoRut--; focoRut = moverFoco(items, focoRut); } 
+          else if (e.key === "Enter" || e.key === "Tab") {
+            if (ddRutMed.style.display === "block" && items.length > 0) {
+              e.preventDefault();
+              if (focoRut > -1) items[focoRut].click();
+              else items[0].click();
+            }
+          }
+        });
+
+        // Detectores de escritura
+        inputMed.addEventListener("input", function() { renderSugerenciasMed(this.value, ddMed, false); });
+        
+        inputRutMed.addEventListener("input", function(e) {
+          let valor = this.value.replace(/[^0-9kK]/g, '').toUpperCase();
+          if (valor.length > 1) valor = valor.slice(0, -1) + '-' + valor.slice(-1);
+          this.value = valor;
+          renderSugerenciasMed(valor, ddRutMed, true);
+        });
+        
+        // Volver a mostrar al hacer clic
+        inputMed.addEventListener("click", function() { if (this.value.length > 1) renderSugerenciasMed(this.value, ddMed, false); });
+        inputRutMed.addEventListener("click", function() { if (this.value.length > 1) renderSugerenciasMed(this.value, ddRutMed, true); });
+        
+        document.addEventListener("click", function (e) { 
+          if (e.target !== inputMed && e.target !== ddMed) ddMed.style.display = "none"; 
+          if (e.target !== inputRutMed && e.target !== ddRutMed) ddRutMed.style.display = "none"; 
+        });
+
+      } else {
+        initCustomDropdown(`medicamento_${id}`, `dd-medicamento_${id}`, () => {
+          if(moduloActivo === "Inhaladores") return arsenalInhaladores.map(m => m.nombre);
+          if(moduloActivo === "CasosEspeciales") return arsenalCasosEspeciales;
+          return arsenalPsiquiatria;
+        });
+
+        if (moduloActivo === "Inhaladores") {
+          document.getElementById(`medicamento_${id}`).addEventListener("input", function() {
+            const medElegido = this.value;
+            const medEncontrado = arsenalInhaladores.find(m => m.nombre === medElegido);
+            document.getElementById(`dosisTotales_${id}`).value = medEncontrado ? medEncontrado.presentacion : "";
+            
+            let unidad = "Puff";
+            if (medElegido && (medElegido.toLowerCase().includes("mg/") || medElegido.toLowerCase().includes("jarabe"))) {
+              unidad = "mL";
+            }
+            const spanSuffix = document.getElementById(`suffixDosis_${id}`);
+            if(spanSuffix) spanSuffix.innerText = unidad;
+          });
+          
+          if(isEdit) document.getElementById(`medicamento_${id}`).dispatchEvent(new Event("input"));
+        }
+      }
+      
+      validarEstadoBasureros();
+      const container = document.getElementById("contenedorMedicamentos");
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
+
+    document.getElementById("btnAgregarFila").addEventListener("click", () => { agregarFilaMedicamento(); });
+
+    window.eliminarFila = function(id) {
+      document.getElementById(`filaMed_${id}`).remove();
+      validarEstadoBasureros();
+    };
+
+    function validarEstadoBasureros() {
+      const filas = document.querySelectorAll(".fila-medicamento");
+      filas.forEach(fila => {
+        const btn = fila.querySelector(".btn-eliminar-fila");
+        if (btn) btn.style.display = (filas.length === 1 || filaEnEdicion) ? "none" : "flex";
+      });
+      
+      // Colapsar el botón y su contenedor fantasma para centrar el botón de Registro
+      let ocultarBtn = (filaEnEdicion || moduloActivo === "Albumina");
+      document.getElementById("btnAgregarFila").style.display = ocultarBtn ? "none" : "flex";
+      
+      const wrapper = document.getElementById("wrapperAgregarFila");
+      if (wrapper) wrapper.style.marginTop = ocultarBtn ? "0px" : "15px";
+    }
+
+    // --- LÓGICA DEL FILTRO DE PACIENTES ACTIVOS ---
+    document.getElementById("filtroActivos").addEventListener("change", () => {
+      const cuerpo = document.getElementById("cuerpoTabla");
+      cuerpo.innerHTML = `<tr><td colspan="8" style="color: var(--text-muted); padding: 15px;"><span class="material-icons-round" style="font-size: 16px; vertical-align: middle;">sync</span> Aplicando filtro...</td></tr>`;
+      google.script.run.withSuccessHandler(renderizarTabla).obtenerRegistrosUniversal(moduloActivo);
+    });
+
+    // --- FORMATOS Y BOTONES DE LIMPIEZA DEMOGRÁFICA ---
+    document.getElementById("rut").addEventListener("input", function(e) {
+      let valor = this.value.replace(/[^0-9kK]/g, '').toUpperCase();
+      if (valor.length > 1) valor = valor.slice(0, -1) + '-' + valor.slice(-1);
+      this.value = valor;
+
+      if (valor.length >= 8) { 
+        const rutLimpio = valor.replace('-', '');
+        const cuerpo = rutLimpio.slice(0, -1);
+        const dvIngresado = rutLimpio.slice(-1);
+        
+        let suma = 0; let multiplo = 2;
+        for (let i = 1; i <= cuerpo.length; i++) {
+          suma += multiplo * parseInt(cuerpo.charAt(cuerpo.length - i));
+          multiplo = multiplo < 7 ? multiplo + 1 : 2;
+        }
+        
+        const dvEsperado = 11 - (suma % 11);
+        let dvCalculado = (dvEsperado === 11) ? "0" : (dvEsperado === 10) ? "K" : dvEsperado.toString();
+        
+        if (dvIngresado !== dvCalculado) {
+          this.style.color = "var(--accent-red)";
+          this.style.textShadow = "0 0 8px rgba(255, 82, 82, 0.4)";
+        } else {
+          this.style.color = "var(--accent-green)";
+          this.style.textShadow = "none";
+        }
+      } else {
+        this.style.color = "var(--text-main)";
+        this.style.textShadow = "none";
+      }
+    });
+
+    let memoriaPacientes = []; // Guarda la memoria caché de pacientes
+    const inputNombres = document.getElementById("pacienteNombres");
+    const inputApellidos = document.getElementById("pacienteApellidos");
+    const inputRut = document.getElementById("rut");
+    const btnLimpiarRut = document.getElementById("btnLimpiarRut");
+    const ddRut = document.getElementById("dd-rut");
+
+    inputRut.addEventListener("input", function(e) {
+      let valorBruto = this.value.toUpperCase();
+      btnLimpiarRut.style.display = valorBruto.length > 0 ? "block" : "none";
+      
+      // Si escriben solo números/K, formateamos como RUT automáticamente
+      if (/^[0-9Kk\.-]+$/.test(valorBruto)) {
+        let valorLimpio = valorBruto.replace(/[^0-9K]/g, '');
+        if (valorLimpio.length > 1) {
+          this.value = valorLimpio.slice(0, -1) + '-' + valorLimpio.slice(-1);
+        } else {
+          this.value = valorLimpio;
+        }
+        
+        // Validación visual de DV
+        let cuerpo = valorLimpio.slice(0, -1);
+        let dvIngresado = valorLimpio.slice(-1);
+        let suma = 0; let multiplo = 2;
+        for (let i = 1; i <= cuerpo.length; i++) {
+          suma += multiplo * parseInt(cuerpo.charAt(cuerpo.length - i));
+          multiplo = multiplo < 7 ? multiplo + 1 : 2;
+        }
+        let dvEsperado = 11 - (suma % 11);
+        let dvCalculado = (dvEsperado === 11) ? "0" : (dvEsperado === 10) ? "K" : dvEsperado.toString();
+        
+        if (dvIngresado !== dvCalculado && valorLimpio.length >= 8) {
+          this.style.color = "var(--accent-red)"; this.style.textShadow = "0 0 8px rgba(255, 82, 82, 0.4)";
+        } else {
+          this.style.color = "var(--accent-green)"; this.style.textShadow = "none";
+        }
+      } else {
+        // Si escriben letras (nombres), quitamos los colores del RUT
+        this.value = valorBruto;
+        this.style.color = "var(--text-main)"; this.style.textShadow = "none";
+      }
+
+      // Desplegar menú de autocompletado
+      ddRut.innerHTML = "";
+      let busquedaRutLimpia = valorBruto.replace(/[^0-9K]/g, ''); // Quita guiones a lo que el usuario escribe
+
+      if (valorBruto.length < 2) { ddRut.style.display = "none"; return; }
+      
+      let matches = memoriaPacientes.filter(p => {
+        let rutPacienteLimpio = p.rut.replace(/[^0-9K]/g, ''); // Quita guiones a la base de datos
+        return (busquedaRutLimpia.length > 0 && rutPacienteLimpio.includes(busquedaRutLimpia)) || p.nombre.includes(valorBruto);
+      });
+
+      if (matches.length > 0) {
+        matches.slice(0, 6).forEach(match => {
+          let div = document.createElement("div");
+          div.style.padding = "10px 15px"; div.style.borderBottom = "1px solid var(--cell-border)"; div.style.cursor = "pointer";
+          div.innerHTML = `<div style="color: var(--accent-blue); font-weight: 900; font-size: 13px;">${match.rut}</div><div style="font-size: 11px; color: var(--text-muted);">${match.nombre}</div>`;
+          
+          div.addEventListener("click", function() {
+            inputRut.value = match.rut;
+            
+            // Lógica chilena: Las últimas 2 palabras son apellidos, el resto nombres
+            let partesNombre = match.nombre.trim().split(" ");
+            if (partesNombre.length <= 2) {
+              document.getElementById("pacienteNombres").value = partesNombre[0] || "";
+              document.getElementById("pacienteApellidos").value = partesNombre[1] || "";
+            } else {
+              document.getElementById("pacienteApellidos").value = partesNombre.slice(-2).join(" ");
+              document.getElementById("pacienteNombres").value = partesNombre.slice(0, -2).join(" ");
+            }
+
+            document.getElementById("servicio").value = match.servicio;
+            
+            ddRut.style.display = "none";
+            inputRut.style.color = "var(--accent-green)"; inputRut.style.textShadow = "none";
+          });
+          div.addEventListener("mouseover", () => div.style.background = "var(--hover-bg)");
+          div.addEventListener("mouseout", () => div.style.background = "transparent");
+          ddRut.appendChild(div);
+        });
+        ddRut.style.display = "block";
+      } else {
+        ddRut.style.display = "none";
+      }
+    });
+
+    document.addEventListener("click", function (e) { if (e.target !== inputRut) ddRut.style.display = "none"; });
+
+    btnLimpiarRut.addEventListener("click", function() { 
+      inputRut.value = ""; inputRut.style.color = "var(--text-main)"; inputRut.style.textShadow = "none"; 
+      this.style.display = "none"; 
+      document.getElementById("pacienteNombres").value = ""; 
+      document.getElementById("pacienteApellidos").value = ""; 
+      inputRut.focus(); 
+    });
+
+    // --- PROCESAMIENTO EN COLA Y GUARDADO ---
+    document.getElementById("formularioDispensacion").addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const srvIngresado = document.getElementById("servicio").value.trim();
+      const digIngresado = document.getElementById("digitador").value.trim();
+
+      if (!listaServicios.includes(srvIngresado)) { alert("❌ SERVICIO inválido. Seleccione de la lista."); return; }
+      if (!arsenalDigitadores.includes(digIngresado)) { alert("❌ DIGITADOR inválido. Seleccione de la lista."); return; }
+
+      const fechaDispStr = document.getElementById("fechaDispensacion").value;
+      const nombresStr = document.getElementById("pacienteNombres").value.trim().toUpperCase();
+      const apellidosStr = document.getElementById("pacienteApellidos").value.trim().toUpperCase();
+      const pacienteStr = `${nombresStr} ${apellidosStr}`.trim();
+      const rutStr = document.getElementById("rut").value.trim();
+
+      const filas = document.querySelectorAll(".fila-medicamento");
+      let paquetesAEnviar = [];
+      let hayError = false;
+
+      filas.forEach(fila => {
+        if(hayError) return;
+        
+        const id = fila.id.split("_")[1];
+        const medIngresado = document.getElementById(`medicamento_${id}`).value.trim();
+        
+        if (!medIngresado) { alert("Debe seleccionar un medicamento en todas las filas."); hayError = true; return; }
+
+        let listaMedsValidos = [];
+        if (moduloActivo === "Inhaladores") listaMedsValidos = arsenalInhaladores.map(m=>m.nombre);
+        else if (moduloActivo === "CasosEspeciales") listaMedsValidos = arsenalCasosEspeciales;
+        else if (moduloActivo === "Psiquiatria") listaMedsValidos = arsenalPsiquiatria;
+        else if (moduloActivo === "Albumina") listaMedsValidos = ["Albúmina 10 g (20% En 50 mL)"];
+
+        if (!listaMedsValidos.includes(medIngresado)) {
+          alert(`❌ El MEDICAMENTO "${medIngresado}" no es válido.`); document.getElementById(`medicamento_${id}`).focus(); hayError = true; return;
+        }
+
+        let paquete = {
+          fechaDispensacion: fechaDispStr,
+          paciente: pacienteStr,
+          rut: rutStr,
+          servicio: srvIngresado,
+          digitador: digIngresado,
+          medicamento: medIngresado
+        };
+
+        if (moduloActivo === "Inhaladores") {
+          const dosisTotales = parseFloat(document.getElementById(`dosisTotales_${id}`).value) || 0;
+          const dosisPuff = parseFloat(document.getElementById(`dosisPuff_${id}`).value) || 0;
+          const frecuencia = parseFloat(document.getElementById(`frecuencia_${id}`).value) || 0;
+
+          if (dosisPuff <= 0 || frecuencia <= 0 || dosisTotales <= 0) {
+            alert(`Revise los números de dosis/frecuencia de ${medIngresado}`); document.getElementById(`dosisPuff_${id}`).focus(); hayError = true; return;
+          }
+
+          const dosisDiaria = dosisPuff * (24 / frecuencia);
+          const duracion = Math.floor(dosisTotales / dosisDiaria);
+          
+          const fechaDisp = new Date(fechaDispStr + "T00:00:00");
+          const fechaFin = new Date(fechaDisp);
+          fechaFin.setDate(fechaFin.getDate() + duracion);
+          const hoy = new Date(); hoy.setHours(0,0,0,0);
+          
+          paquete.dosisTotales = dosisTotales;
+          paquete.dosisPuff = dosisPuff;
+          paquete.frecuencia = frecuencia;
+          paquete.dosisDiarias = dosisDiaria;
+          paquete.duracionTotal = duracion;
+          paquete.fechaFin = String(fechaFin.toLocaleDateString('es-CL'));
+          paquete.diasRestantes = Math.ceil((fechaFin.getTime() - hoy.getTime()) / (1000 * 3600 * 24));
+        } else if (moduloActivo === "Albumina") {
+          let diagnostico = document.getElementById(`diagnostico_${id}`).value.trim();
+          const frascos = parseInt(document.getElementById(`frascosDespacho_${id}`).value) || 0;
+          const medicoAlb = String(document.getElementById(`medicoAlbumina_${id}`).value).trim().toUpperCase();
+          const rutMedicoAlb = String(document.getElementById(`rutMedicoAlbumina_${id}`).value).trim().toUpperCase();
+          
+          if (!protocolosAlbumina[diagnostico]) {
+            alert(`❌ Debe seleccionar un diagnóstico válido del protocolo.`); document.getElementById(`diagnostico_${id}`).focus(); hayError = true; return;
+          }
+          
+          if (diagnostico === "Otro (Fuera de protocolo)") {
+            const diagOtro = document.getElementById(`diagnosticoOtro_${id}`).value.trim();
+            if (!diagOtro) {
+              alert(`❌ Debe especificar el diagnóstico manual en el campo rojo.`); document.getElementById(`diagnosticoOtro_${id}`).focus(); hayError = true; return;
+            }
+            diagnostico = "Otro: " + diagOtro.toUpperCase();
+          }
+
+          if (frascos <= 0) {
+            alert(`❌ Debe ingresar al menos 1 frasco a despachar.`); document.getElementById(`frascosDespacho_${id}`).focus(); hayError = true; return;
+          }
+
+          if (!medicoAlb || !rutMedicoAlb) {
+            alert(`❌ Debe ingresar el Nombre y RUT del Médico tratante.`); document.getElementById(`medicoAlbumina_${id}`).focus(); hayError = true; return;
+          }
+          
+          paquete.diagnostico = diagnostico;
+          paquete.frascos = frascos;
+          paquete.medicoTratante = medicoAlb;
+          paquete.rutMedico = rutMedicoAlb;
+        } else {
+          paquete.medicoTratante = String(document.getElementById(`medicoTratante_${id}`).value).trim().toUpperCase();
+        }
+        
+        paquetesAEnviar.push(paquete);
+      });
+
+      if (hayError || paquetesAEnviar.length === 0) return;
+
+      const btnGuardar = document.getElementById("btnGuardar");
+      const btnAgregar = document.getElementById("btnAgregarFila");
+      btnGuardar.disabled = true; btnAgregar.style.display = "none";
+      
+      let indexActual = 0;
+      
+      const procesarSiguiente = () => {
+        if (indexActual >= paquetesAEnviar.length) {
+          // Lanzar Animación de Éxito Flotante
+          const toast = document.getElementById("toastExito");
+          toast.style.bottom = "30px"; toast.style.opacity = "1";
+          setTimeout(() => { toast.style.bottom = "-100px"; toast.style.opacity = "0"; }, 3500);
+
+          btnGuardar.disabled = false;
+          const digitadorActual = document.getElementById("digitador").value;
+          
+          document.getElementById("formularioDispensacion").reset();
+          document.getElementById("fechaDispensacion").valueAsDate = new Date();
+          document.getElementById("digitador").value = digitadorActual;
+          document.getElementById("rut").style.color = "var(--text-main)";
+          btnLimpiarRut.style.display = "none";
+          
+          filaEnEdicion = null;
+          cambiarModulo(moduloActivo); // Recarga y limpia las filas
+          return;
+        }
+
+        btnGuardar.innerHTML = `<span class="material-icons-round" style="vertical-align: bottom; font-size: 22px; margin-right: 5px;">hourglass_empty</span> Enviando medicamento ${indexActual + 1} de ${paquetesAEnviar.length}...`;
+        const item = paquetesAEnviar[indexActual];
+
+        const callbackExito = (res) => {
+          if (res.exito) { indexActual++; procesarSiguiente(); } 
+          else { alert(`Error con ${item.medicamento}: ` + res.error); resetBotones(); }
+        };
+        const callbackFallo = (err) => {
+          alert(`Error de red con ${item.medicamento}: ` + err.message); resetBotones();
+        };
+
+        if (filaEnEdicion && paquetesAEnviar.length === 1) {
+          google.script.run.withSuccessHandler(callbackExito).withFailureHandler(callbackFallo).actualizarDispensacionUniversal(item, moduloActivo, filaEnEdicion);
+        } else {
+          google.script.run.withSuccessHandler(callbackExito).withFailureHandler(callbackFallo).guardarDispensacionUniversal(item, moduloActivo);
+        }
+      };
+
+      const resetBotones = () => { 
+        btnGuardar.disabled = false; 
+        btnGuardar.innerHTML = `<span class="material-icons-round" style="vertical-align: bottom; font-size: 22px; margin-right: 5px;">sync_problem</span> Reintentar envíos fallidos`; 
+        if(!filaEnEdicion) btnAgregar.style.display = "flex"; 
+      }
+      
+      procesarSiguiente();
+    });
+
+    function renderizarTabla(respuesta) {
+      const cuerpo = document.getElementById("cuerpoTabla");
+      if (!respuesta || !respuesta.exito) {
+        cuerpo.innerHTML = `<tr><td colspan="7" style="color: var(--accent-red); padding: 15px;">Error al cargar datos del servidor.</td></tr>`;
+        return;
+      }
+      if (respuesta.datos.length === 0) {
+        cuerpo.innerHTML = `<tr><td colspan="7" style="color: var(--text-muted); padding: 15px;">No hay registros activos en este módulo.</td></tr>`;
+        return;
+      }
+
+      cuerpo.innerHTML = "";
+      memoriaPacientes = []; // Reiniciamos el caché para buscar
+
+      // Llenamos el autocompletado en segundo plano
+      respuesta.datos.forEach(reg => {
+        if (!memoriaPacientes.find(p => p.rut === reg.rut)) {
+          memoriaPacientes.push({ rut: reg.rut, nombre: reg.paciente, servicio: reg.servicio });
+        }
+      });
+
+      if (moduloActivo === "Inhaladores") {
+        const hoy = new Date(); hoy.setHours(0,0,0,0);
+        
+        respuesta.datos.forEach(reg => {
+          let fechaFinObj = new Date();
+          const textoFecha = reg.fechaFin;
+          if (textoFecha.includes("/")) {
+            const partes = textoFecha.split("/");
+            fechaFinObj = new Date(partes[2], partes[1] - 1, partes[0]);
+          } else if (textoFecha.includes("-")) {
+            const partes = textoFecha.split("-");
+            fechaFinObj = (partes[0].length === 4) ? new Date(partes[0], partes[1] - 1, partes[2]) : new Date(partes[2], partes[1] - 1, partes[0]);
+          }
+          fechaFinObj.setHours(0,0,0,0);
+          
+          const diasRestantesVivos = Math.ceil((fechaFinObj.getTime() - hoy.getTime()) / (1000 * 3600 * 24));
+          
+          // Motor de filtrado de inactivos
+          const ocultarTerminados = document.getElementById("filtroActivos").checked;
+          // Se cambia a < -1 para dar un día (24 hrs) de gracia visual en pantalla
+          if (ocultarTerminados && diasRestantesVivos < -1) {
+            return; // Se salta este registro, aligerando la carga visual instantáneamente
+          }
+
+          let claseEstado = "estado-optimo";
+          let textoMostrar = diasRestantesVivos;
+
+          if (diasRestantesVivos < 0) {
+            claseEstado = "estado-terminado";
+            textoMostrar = "TERMINADO";
+          } else if (diasRestantesVivos === 0) {
+            claseEstado = "estado-critico";
+            textoMostrar = "0";
+          } else if (diasRestantesVivos <= 3) {
+            claseEstado = "estado-critico";
+          } else if (diasRestantesVivos <= 7) {
+            claseEstado = "estado-advertencia";
+          }
+
+          const strFechaFin = `${String(fechaFinObj.getDate()).padStart(2,'0')}/${String(fechaFinObj.getMonth()+1).padStart(2,'0')}/${fechaFinObj.getFullYear()}`;
+          let unidad = reg.medicamento.toLowerCase().includes("mg/") || reg.medicamento.toLowerCase().includes("jarabe") ? "mL" : "puff";
+          
+          let fDispFormateada = reg.fechaDisp;
+          if (fDispFormateada.includes("-") && fDispFormateada.indexOf("-") === 4) { 
+            const p = fDispFormateada.split("-");
+            fDispFormateada = `${p[2]}/${p[1]}/${p[0]}`;
+          }
+
+          const datosSafe = encodeURIComponent(JSON.stringify(reg)).replace(/'/g, "%27");
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td style="color: var(--text-muted); font-size: 13px; font-weight: bold;">${fDispFormateada}</td>
+            <td style="text-align: left; padding-left: 10px; font-weight: bold;">${reg.paciente}<br><span style="font-size: 10px; color: var(--accent-blue);">${reg.rut}</span></td>
+            <td>${reg.servicio}</td>
+            <td style="text-align: left; padding-left: 10px;">${reg.medicamento}</td>
+            <td>
+              <div style="font-weight: 900; color: var(--text-main); font-size: 13px;">${reg.dosisPuff} ${unidad} c/${reg.frecuencia}h</div>
+              <div style="font-size: 11px; color: var(--accent-blue); font-weight: bold; margin-top: 2px;">Tot: ${Number(reg.dosisDiaria).toFixed(1)} ${unidad}/día</div>
+            </td>
+            <td>${strFechaFin}</td>
+            <td class="${claseEstado}">${textoMostrar}</td>
+            <td><button type="button" onclick="prepararEdicion('${datosSafe}')" style="background:transparent; border:none; cursor:pointer; color:var(--accent-blue);" title="Editar Registro"><span class="material-icons-round" style="font-size: 18px;">edit</span></button></td>`;
+          cuerpo.appendChild(tr);
+        });
+      } else if (moduloActivo === "Albumina") {
+        respuesta.datos.forEach(reg => {
+          let fDispFormateada = reg.fechaDisp;
+          if (fDispFormateada.includes("-") && fDispFormateada.indexOf("-") === 4) { 
+            const p = fDispFormateada.split("-");
+            fDispFormateada = `${p[2]}/${p[1]}/${p[0]}`;
+          }
+
+          // Consultamos el Cerebro Clínico para conocer los topes de este diagnóstico
+          const proto = protocolosAlbumina[reg.diagnostico] || { maxF: 999, maxDias: 999 };
+          const topeFrascos = proto.maxF;
+          const topeDias = proto.maxDias;
+          
+          // 🌟 Integración al Casillero "Ocultar Finalizados"
+          const ocultarTerminados = document.getElementById("filtroActivos").checked;
+          if (ocultarTerminados && reg.estadoExtra === "CERRADO") return;
+
+          // Motor Lógico de Alertas de Progreso
+          let estado = "VIGENTE";
+          let claseEstado = "estado-optimo";
+          
+          if (reg.estadoExtra === "CERRADO") {
+              estado = "SUSPENDIDO";
+              claseEstado = "estado-terminado";
+          } else if (reg.diasTratamiento > topeDias && topeDias !== 999) {
+              estado = "EXCEDE DÍAS";
+              claseEstado = "estado-critico";
+          } else if (reg.frascosAcumulados > topeFrascos && topeFrascos !== 999) {
+              estado = "EXCEDE DOSIS";
+              claseEstado = "estado-critico";
+          } else if (reg.frascosAcumulados === topeFrascos || reg.diasTratamiento === topeDias) {
+              estado = "LÍMITE ALCANZADO";
+              claseEstado = "estado-advertencia";
+          }
+
+          let historialHTML = `<div style="max-height: 80px; overflow-y: auto; background: rgba(0,0,0,0.15); border: 1px solid var(--cell-border); border-radius: 6px; padding: 6px; margin-top: 6px; font-size: 11px; text-align: left;">`;
+          if (reg.historial && reg.historial.length > 0) {
+            reg.historial.forEach((h, index) => {
+              historialHTML += `<div style="border-bottom: 1px dashed rgba(255,255,255,0.1); padding: 5px 0; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: var(--text-muted); font-weight: bold;">Día ${index + 1} <span style="font-weight: normal; opacity: 0.7;">(${h.fecha})</span></span>
+                  <strong style="color: var(--accent-blue);">${h.frascos} fcs</strong>
+                </div>
+                <div style="color: var(--accent-green); font-size: 10px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                  <span class="material-icons-round" style="font-size: 11px;">person</span> Méd: ${h.medico}
+                </div>
+                <div style="color: var(--text-muted); font-size: 9px; margin-top: 2px; display: flex; align-items: center; gap: 4px; padding-left: 15px;">
+                  Dig: ${h.digitador}
+                </div>
+              </div>`;
+            });
+          }
+          historialHTML += `</div>`;
+
+          const datosSafe = encodeURIComponent(JSON.stringify(reg)).replace(/'/g, "%27");
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td style="font-size: 12px; font-weight: bold; color: var(--text-muted);">${fDispFormateada}</td>
+            <td style="text-align: left; padding-left: 10px; font-weight: bold;">${reg.paciente}<br><span style="font-size: 10px; color: var(--accent-blue);">${reg.rut}</span></td>
+            <td>${reg.servicio}</td>
+            <td style="text-align: left; padding-left: 10px; color: var(--accent-blue); font-weight: bold; font-size: 12px;">
+              ${reg.diagnostico}
+              ${reg.ciclo > 1 ? `<br><span style="color:var(--accent-red); font-weight:900; font-size:10px;">(CICLO ${reg.ciclo})</span>` : ''}
+            </td>
+            <td style="vertical-align: top; padding-top: 15px;">
+              <span style="font-weight: 900; font-size: 14px; color: var(--accent-blue);">${reg.frascosAcumulados} totales</span>
+              ${historialHTML}
+            </td>
+            <td style="vertical-align: top; padding-top: 15px;">
+              <div style="font-size: 12px; margin-bottom: 2px;">Día de Tratamiento: <strong style="color: var(--text-main); font-size: 13px;">${reg.diasTratamiento}</strong> <span style="color: var(--text-muted);">de ${topeDias !== 999 ? topeDias : '∞'}</span></div>
+              <div style="font-size: 11px;">Límite Protocolo: <strong style="color: var(--accent-blue); font-size: 13px;">${topeFrascos !== 999 ? topeFrascos : '∞'}</strong> <span style="color: var(--text-muted);">frascos</span></div>
+            </td>
+            <td class="${claseEstado}" style="font-size: 11px; vertical-align: middle;">${estado}</td>
+            <td style="vertical-align: middle;"><button type="button" onclick="prepararRedespacho('${datosSafe}')" style="background:transparent; border:none; cursor:pointer; color:var(--accent-green);" title="Continuar Tratamiento (Nuevo Despacho)"><span class="material-icons-round" style="font-size: 24px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">post_add</span></button></td>`;
+          cuerpo.appendChild(tr);
+        });
+      } else {
+        respuesta.datos.forEach(reg => {
+          let fDispFormateada = reg.fechaDisp;
+          if (fDispFormateada.includes("-") && fDispFormateada.indexOf("-") === 4) { 
+            const p = fDispFormateada.split("-");
+            fDispFormateada = `${p[2]}/${p[1]}/${p[0]}`;
+          }
+
+          const datosSafe = encodeURIComponent(JSON.stringify(reg)).replace(/'/g, "%27");
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td style="font-size: 13px; font-weight: bold;">${fDispFormateada}</td>
+            <td style="text-align: left; padding-left: 10px; font-weight: bold;">${reg.paciente}<br><span style="font-size: 10px; color: var(--accent-blue);">${reg.rut}</span></td>
+            <td>${reg.servicio}</td>
+            <td style="text-align: left; padding-left: 10px; color: var(--accent-blue); font-weight: bold;">${reg.medicamento}</td>
+            <td style="font-weight: bold; color: var(--accent-green); font-size: 13px;">${reg.medicoTratante}</td>
+            <td><button type="button" onclick="prepararEdicion('${datosSafe}')" style="background:transparent; border:none; cursor:pointer; color:var(--accent-blue);" title="Editar Registro"><span class="material-icons-round" style="font-size: 18px;">edit</span></button></td>`;
+          cuerpo.appendChild(tr);
+        });
+      }
+    }
+
+    // --- LÓGICA DEL BOTÓN BORRAR (X) DEL BUSCADOR ---
+    const inputBuscador = document.getElementById("buscadorTabla");
+    const btnLimpiar = document.getElementById("btnLimpiarBuscador");
+
+    btnLimpiar.addEventListener("click", function() {
+      inputBuscador.value = "";
+      inputBuscador.focus(); // Devuelve el cursor automáticamente
+      this.style.display = "none";
+      inputBuscador.dispatchEvent(new Event("input")); // Obliga a la tabla a recargar todos los pacientes
+    });
+
+    // NUEVO MOTOR DE BUSCADOR INTERACTIVO (ANTILAG DEBOUNCE + CASCADA)
+    let temporizadorBuscador;
+    
+    inputBuscador.addEventListener("input", function() {
+      const texto = this.value.toLowerCase().trim();
+      
+      // La X de borrado sí reacciona al instante
+      btnLimpiar.style.display = texto.length > 0 ? "block" : "none";
+      
+      // Freno inteligente (Debounce): Reinicia el reloj con cada tecla
+      clearTimeout(temporizadorBuscador);
+      
+      temporizadorBuscador = setTimeout(() => {
+        const filas = document.querySelectorAll("#cuerpoTabla tr");
+        let contadorVisibles = 0;
+        
+        filas.forEach(fila => {
+          const contieneTexto = fila.innerText.toLowerCase().includes(texto);
+          
+          if (contieneTexto) {
+            fila.style.display = "";
+            fila.classList.remove("fila-animada");
+            void fila.offsetWidth; 
+            fila.style.animationDelay = `${contadorVisibles * 25}ms`;
+            fila.classList.add("fila-animada");
+            contadorVisibles++;
+          } else {
+            fila.style.display = "none";
+            fila.classList.remove("fila-animada");
+            fila.style.animationDelay = "0ms";
+          }
+        });
+      }, 350); 
+    });
+
+    // --- NUEVO: FUNCIÓN PARA CARGAR DATOS A EDICIÓN ---
+    function prepararEdicion(datosCodificados) {
+      try {
+        const reg = JSON.parse(decodeURIComponent(datosCodificados));
+        filaEnEdicion = reg.filaReal;
+        
+        if (!filaEnEdicion) { alert("Advertencia: No se encontró la fila original."); }
+        
+        let fechaLimpia = String(reg.fechaDisp).replace(/\//g, "-");
+        let fechaPartes = fechaLimpia.split("-");
+        if (fechaPartes.length === 3) {
+          if (fechaPartes[0].length === 4) { document.getElementById("fechaDispensacion").value = `${fechaPartes[0]}-${fechaPartes[1]}-${fechaPartes[2]}`; } 
+          else { document.getElementById("fechaDispensacion").value = `${fechaPartes[2]}-${fechaPartes[1]}-${fechaPartes[0]}`; }
+        }
+        
+        // Heurística chilena: 2 apellidos al editar
+        let partesNombre = reg.paciente.trim().split(" ");
+        if (partesNombre.length <= 2) {
+          document.getElementById("pacienteNombres").value = partesNombre[0] || "";
+          document.getElementById("pacienteApellidos").value = partesNombre[1] || "";
+        } else {
+          document.getElementById("pacienteApellidos").value = partesNombre.slice(-2).join(" ");
+          document.getElementById("pacienteNombres").value = partesNombre.slice(0, -2).join(" ");
+        }
+        
+        document.getElementById("rut").value = reg.rut;
+        document.getElementById("servicio").value = reg.servicio;
+        
+        document.getElementById("btnLimpiarRut").style.display = "block";
+
+        // Limpiamos las filas actuales y agregamos exactamente 1 con los datos a editar
+        document.getElementById("contenedorMedicamentos").innerHTML = "";
+        contadorFilas = 0;
+        agregarFilaMedicamento(reg);
+        
+        const btn = document.getElementById("btnGuardar");
+        btn.innerHTML = `<span class="material-icons-round" style="vertical-align: bottom; font-size: 20px; margin-right: 5px;">update</span> Actualizar Registro`;
+        btn.style.background = "linear-gradient(135deg, #ff9800, #f57c00)"; 
+        
+        document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
+        
+        const form = document.getElementById("formularioDispensacion");
+        form.style.transition = "box-shadow 0.4s ease";
+        form.style.boxShadow = "0 0 25px rgba(255, 152, 0, 0.8)";
+        setTimeout(() => { form.style.boxShadow = "none"; }, 1200);
+
+      } catch (error) { alert("Error al cargar datos: " + error.message); }
+    }
+
+    // --- NUEVA FUNCIÓN: RE-DESPACHO RÁPIDO ALBÚMINA ---
+    function prepararRedespacho(datosCodificados) {
+      try {
+        const reg = JSON.parse(decodeURIComponent(datosCodificados));
+        
+        // 1. FUNDAMENTAL: Nos aseguramos de que guarde como fila NUEVA, no como edición.
+        filaEnEdicion = null; 
+        
+        // 2. Reseteamos la fecha a HOY
+        document.getElementById("fechaDispensacion").valueAsDate = new Date();
+        
+        // 3. Auto-completamos demografía con 2 apellidos
+        let partesNombre = reg.paciente.trim().split(" ");
+        if (partesNombre.length <= 2) {
+          document.getElementById("pacienteNombres").value = partesNombre[0] || "";
+          document.getElementById("pacienteApellidos").value = partesNombre[1] || "";
+        } else {
+          document.getElementById("pacienteApellidos").value = partesNombre.slice(-2).join(" ");
+          document.getElementById("pacienteNombres").value = partesNombre.slice(0, -2).join(" ");
+        }
+        
+        document.getElementById("rut").value = reg.rut;
+        document.getElementById("servicio").value = reg.servicio;
+        
+        document.getElementById("btnLimpiarRut").style.display = "block";
+
+        // 4. Inyectamos la fila protocolizada
+        document.getElementById("contenedorMedicamentos").innerHTML = "";
+        contadorFilas = 0;
+        agregarFilaMedicamento({
+          medicamento: "Albúmina 10 g (20% En 50 mL)",
+          diagnostico: reg.diagnostico,
+          frascos: 1 // Queda listo en 1 para que el digitador ponga la cantidad de hoy
+        });
+        
+        // 5. Animación de enfoque
+        const btn = document.getElementById("btnGuardar");
+        btn.innerHTML = `<span class="material-icons-round" style="vertical-align: bottom; font-size: 20px; margin-right: 5px;">add_box</span> Registrar Entrega de Hoy`;
+        btn.style.background = "linear-gradient(135deg, #00e676, #00c853)"; 
+        
+        document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
+        
+        const form = document.getElementById("formularioDispensacion");
+        form.style.transition = "box-shadow 0.4s ease";
+        form.style.boxShadow = "0 0 25px rgba(0, 230, 118, 0.8)";
+        setTimeout(() => { form.style.boxShadow = "none"; }, 1200);
+
+      } catch (error) { alert("Error al cargar datos para re-despacho: " + error.message); }
+    }
+  </script>
+
+<!-- MODAL DEL INFORME CLÍNICO -->
+  <div id="modalInforme" class="modal-informe">
+    
+    <!-- BARRA DE FILTROS DIRECTIVOS (No se imprime) -->
+    <div class="no-print" style="position: sticky; top: 0; background: var(--dropdown-bg); padding: 15px 30px; display: flex; gap: 10px; justify-content: center; align-items: center; border-bottom: 1px solid var(--glass-border); z-index: 100001; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+      <div style="color: var(--accent-blue); font-weight: 900; margin-right: 5px; display: flex; align-items: center; gap: 6px;"><span class="material-icons-round">filter_alt</span> FILTROS:</div>
+      
+      <select id="informeFiltroAnio" style="background: var(--select-bg); color: var(--text-main); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 20px; outline: none; font-weight: bold; cursor: pointer;"></select>
+      
+      <select id="informeFiltroServicio" style="background: var(--select-bg); color: var(--text-main); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 20px; outline: none; font-weight: bold; cursor: pointer;">
+        <option value="TODOS">Nivel Hospital (Todos los Servicios)</option>
+      </select>
+
+      <select id="informeFiltroTiempo" style="background: var(--select-bg); color: var(--text-main); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 20px; outline: none; font-weight: bold; cursor: pointer;">
+        <option value="ANUAL" selected>Año Completo</option>
+        <option value="T1">1° Trimestre (Ene-Mar)</option>
+        <option value="T2">2° Trimestre (Abr-Jun)</option>
+        <option value="T3">3° Trimestre (Jul-Sep)</option>
+        <option value="T4">4° Trimestre (Oct-Dic)</option>
+        <option value="1">Enero</option>
+        <option value="2">Febrero</option>
+        <option value="3">Marzo</option>
+        <option value="4">Abril</option>
+        <option value="5">Mayo</option>
+        <option value="6">Junio</option>
+        <option value="7">Julio</option>
+        <option value="8">Agosto</option>
+        <option value="9">Septiembre</option>
+        <option value="10">Octubre</option>
+        <option value="11">Noviembre</option>
+        <option value="12">Diciembre</option>
+      </select>
+
+      <button onclick="ejecutarInformeFiltrado()" style="background: var(--accent-blue); color: #fff; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(64,196,255,0.3); transition: transform 0.2s;">Generar Reporte</button>
+    </div>
+
+    <button class="btn-imprimir-informe no-print" onclick="window.print()" style="top: 80px;"><span class="material-icons-round">print</span> Imprimir A4</button>
+    <button class="btn-cerrar-informe no-print" onclick="document.getElementById('modalInforme').style.display='none'" style="top: 80px;"><span class="material-icons-round">close</span> Cerrar</button>
+    
+    <!-- CONTENEDOR DE LA HOJA A4 -->
+    <div class="informe-a4">
+      
+      <div class="informe-header">
+        <div>
+          <h2 style="margin: 0; color: #0277bd; font-size: 24px; text-transform: uppercase;">Informe de Gestión y Dispensación</h2>
+          <div id="subtituloInforme" style="color: #555; font-weight: bold; margin-top: 5px; font-size: 14px;">Medicamento de Alto Costo: Albúmina Humana 20%</div>
+        </div>
+        <div style="text-align: right; color: #555; font-size: 12px;">
+          <div><strong style="color: #000;">Hospital El Pino</strong></div>
+          <div>Unidad de Farmacia</div>
+          <div id="fechaInformeEmision"></div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center;">
+          <div id="tituloKpi1" style="font-size: 12px; color: #666; text-transform: uppercase; font-weight: bold;">Total Dispensado (Mes Actual)</div>
+          <div id="kpiMesActual" style="font-size: 32px; font-weight: 900; color: #0277bd; margin-top: 5px;">--</div>
+        </div>
+        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 12px; color: #666; text-transform: uppercase; font-weight: bold;">Servicio Analizado</div>
+          <div id="kpiVariacion" style="font-size: 20px; font-weight: 900; margin-top: 15px; color: #333; text-transform: uppercase;">--</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 30px;">
+        <h3 style="border-bottom: 1px solid #eee; padding-bottom: 8px; color: #333;">1. Curva de Tendencia de Dispensación Mensual</h3>
+        <canvas id="graficoTendencia" height="80"></canvas>
+      </div>
+
+      <div style="margin-bottom: 30px;">
+        <h3 id="tituloGrafico2" style="border-bottom: 1px solid #eee; padding-bottom: 8px; color: #333;">2. Distribución</h3>
+        <canvas id="graficoDiagnosticos" height="100"></canvas>
+      </div>
+      
+      <!-- LISTA DE PACIENTES DENTRO DE LA HOJA A4 CON SALTO DE PÁGINA -->
+      <div class="salto-impresion" style="margin-top: 30px;">
+        <h3 style="border-bottom: 1px solid #eee; padding-bottom: 8px; color: #333;">3. Listado de Pacientes Tratados en el Periodo</h3>
+        <div id="listaPacientesInforme" style="font-size: 11px; color: #555;">
+          <!-- Aquí se inyectarán las tablas por servicio -->
+        </div>
+      </div>
+
+      <div style="font-size: 10px; color: #888; text-align: center; margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px;">
+        Documento generado automáticamente por FarmaControl.
+      </div>
+      
+    </div> <!-- CIERRE DE LA HOJA A4 -->
+  </div> <!-- CIERRE DEL MODAL -->
+
+  <script>
+    let chartTendencia = null;
+    let chartDiagnosticos = null;
+
+    function abrirModalInforme() {
+      document.getElementById('modalInforme').style.display = 'block';
+      
+      const selectSrv = document.getElementById("informeFiltroServicio");
+      selectSrv.innerHTML = '<option value="TODOS">Nivel Hospital (Todos los Servicios)</option>';
+      listaServicios.forEach(s => {
+        let opt = document.createElement("option"); opt.value = s; opt.innerText = s; selectSrv.appendChild(opt);
+      });
+
+      const selectAnio = document.getElementById("informeFiltroAnio");
+      const anioActual = new Date().getFullYear();
+      selectAnio.innerHTML = '';
+      for (let i = anioActual; i >= anioActual - 3; i--) {
+        selectAnio.innerHTML += `<option value="${i}">${i}</option>`;
+      }
+
+      ejecutarInformeFiltrado(); 
+    }
+
+    function ejecutarInformeFiltrado() {
+      const f = new Date();
+      document.getElementById('fechaInformeEmision').innerText = `Emisión: ${String(f.getDate()).padStart(2,'0')}/${String(f.getMonth()+1).padStart(2,'0')}/${f.getFullYear()}`;
+      
+      const srv = document.getElementById("informeFiltroServicio").value;
+      const tiempo = document.getElementById("informeFiltroTiempo").value;
+      const anio = document.getElementById("informeFiltroAnio").value;
+      const textoTiempo = document.getElementById("informeFiltroTiempo").options[document.getElementById("informeFiltroTiempo").selectedIndex].text;
+      
+      document.getElementById('kpiMesActual').innerText = "...";
+      document.getElementById('kpiVariacion').innerText = "...";
+
+      const txtSrv = srv === "TODOS" ? "Nivel Hospital" : srv;
+      
+      if (moduloActivo === "Albumina") {
+        document.getElementById('subtituloInforme').innerText = `Medicamento de Alto Costo: Albúmina Humana 20% | Periodo: ${textoTiempo} ${anio}`;
+        document.getElementById('tituloKpi1').innerText = `Total Frascos Dispensados (${textoTiempo})`;
+        document.getElementById('tituloGrafico2').innerText = "2. Distribución por Diagnóstico Protocolizado";
+        google.script.run.withSuccessHandler(dibujarGraficosInforme).obtenerEstadisticasAlbumina(srv, tiempo, anio);
+      } else if (moduloActivo === "Inhaladores") {
+        document.getElementById('subtituloInforme').innerText = `Arsenal: Inhaladores y Jarabes | Periodo: ${textoTiempo} ${anio}`;
+        document.getElementById('tituloKpi1').innerText = `Total Tratamientos Dispensados (${textoTiempo})`;
+        document.getElementById('tituloGrafico2').innerText = "2. Fármacos Más Dispensados (Top 10)";
+        google.script.run.withSuccessHandler(dibujarGraficosInforme).obtenerEstadisticasInhaladores(srv, tiempo, anio);
+      }
+    }
+
+    function dibujarGraficosInforme(res) {
+      if (!res.exito) { alert("Error al cargar datos del informe: " + res.error); return; }
+      
+      document.getElementById('kpiMesActual').innerText = res.kpiActual;
+      document.getElementById('kpiVariacion').innerText = res.kpiVar;
+
+      if (chartTendencia) chartTendencia.destroy();
+      if (chartDiagnosticos) chartDiagnosticos.destroy();
+
+      const ctxTen = document.getElementById('graficoTendencia').getContext('2d');
+      chartTendencia = new Chart(ctxTen, {
+        type: 'line',
+        data: { labels: res.labelsTendencia, datasets: [{ label: 'Total Dispensado', data: res.dataTendencia, borderColor: '#0277bd', backgroundColor: 'rgba(2, 119, 189, 0.15)', borderWidth: 3, fill: true, tension: 0.3, pointRadius: 5, pointHoverRadius: 8 }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+      });
+
+      const ctxDiag = document.getElementById('graficoDiagnosticos').getContext('2d');
+      chartDiagnosticos = new Chart(ctxDiag, {
+        type: 'bar',
+        data: { labels: res.labelsDiag, datasets: [{ label: 'Total', data: res.dataDiag, backgroundColor: ['#0277bd', '#00e676', '#ff9800', '#ab47bc', '#ef5350', '#26c6da', '#8d6e63'], borderRadius: 6 }] },
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+      });
+
+      // 🌟 GENERAR LISTADO DE PACIENTES POR SERVICIO
+      let htmlPacientes = "";
+      if (!res.pacientes || Object.keys(res.pacientes).length === 0) {
+         htmlPacientes = "<div style='padding: 10px; background: #f5f5f5; border-radius: 6px; text-align: center;'>No hay pacientes registrados con estos filtros.</div>";
+      } else {
+         let unidadTotal = moduloActivo === "Albumina" ? "Frascos" : "Tratamientos";
+         for (let servicio in res.pacientes) {
+            htmlPacientes += `<h4 style="margin: 15px 0 5px 0; color: #0277bd; font-size: 13px;">${servicio.toUpperCase()}</h4>`;
+            htmlPacientes += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; border: 1px solid #e0e0e0;">
+              <thead><tr style="background: #f8f9fa; text-align: left;">
+                <th style="padding: 6px; border: 1px solid #e0e0e0; width: 100px;">RUT</th>
+                <th style="padding: 6px; border: 1px solid #e0e0e0;">Paciente</th>
+                <th style="padding: 6px; border: 1px solid #e0e0e0; text-align: center; width: 120px;">Total Recibido</th>
+              </tr></thead><tbody>`;
+            
+            res.pacientes[servicio].sort((a,b) => b.total - a.total).forEach(p => {
+               htmlPacientes += `<tr>
+                 <td style="padding: 4px 6px; border: 1px solid #e0e0e0; font-weight: bold; color: #555;">${p.rut}</td>
+                 <td style="padding: 4px 6px; border: 1px solid #e0e0e0; font-weight: bold; color: #333;">${p.nombre}</td>
+                 <td style="padding: 4px 6px; border: 1px solid #e0e0e0; text-align: center; font-weight: 900; color: #0277bd;">${p.total} <span style="font-weight: normal; font-size: 9px; color: #888;">${unidadTotal}</span></td>
+               </tr>`;
+            });
+            htmlPacientes += `</tbody></table>`;
+         }
+      }
+      document.getElementById('listaPacientesInforme').innerHTML = htmlPacientes;
+    }
+
+    // =================================================================
+    // 🌟 MOTOR DEL TECLADO Y MODAL CALCULADORA
+    // =================================================================
+    let inputActivo = null;
+    let moduloCalcActivo = 'STOCK';
+
+    function abrirCalculadora() {
+      document.getElementById('modalCalculadora').style.display = 'flex';
+      if(document.getElementById("selectJarabe").options.length <= 1) poblarListasCalc();
+    }
+
+    // Interceptar clics para iluminar el borde azul al estilo FarmaPerfil
+    document.addEventListener('focusin', function(e) {
+      if (e.target.closest('#modalCalculadora') && e.target.tagName === 'INPUT' && e.target.type === 'number') {
+        inputActivo = e.target;
+        document.querySelectorAll('#modalCalculadora .fp-input-pill').forEach(pill => pill.classList.remove('focused'));
+        const padre = inputActivo.closest('.fp-input-pill');
+        if(padre) padre.classList.add('focused');
+      }
+    });
+
+    function teclear(valor, evento) {
+      evento.preventDefault(); 
+      if (!inputActivo) return;
+
+      if (valor === 'C') { inputActivo.value = ''; } 
+      else if (valor === 'DEL') { inputActivo.value = inputActivo.value.slice(0, -1); } 
+      else {
+        if (valor === '.') {
+          if (inputActivo.value.includes('.')) return; 
+          if (inputActivo.value === '') { inputActivo.value = '0.'; return; }
+        }
+        inputActivo.value += valor;
+      }
+      inputActivo.dispatchEvent(new Event('input'));
+    }
+
+    function siguienteCelda(evento) {
+      evento.preventDefault();
+      const seccionActiva = document.getElementById('calc-' + moduloCalcActivo);
+      const inputs = Array.from(seccionActiva.querySelectorAll('input:not([readonly])')).filter(el => el.offsetParent !== null);
+
+      if (!inputActivo) { if (inputs.length > 0) inputs[0].focus(); return; }
+
+      const indexActual = inputs.indexOf(inputActivo);
+      if (indexActual > -1 && indexActual < inputs.length - 1) {
+        inputs[indexActual + 1].focus();
+      } else {
+        inputActivo.blur();
+        if (moduloCalcActivo === 'JARABE') calcularJarabe();
+        else if (moduloCalcActivo === 'STOCK') calcularDuracion();
+        else if (moduloCalcActivo === 'ESQUEMA') calcularEsquema(true);
+      }
+    }
+
+    function activarSubCalc(seccionId) {
+      moduloCalcActivo = seccionId;
+      document.getElementById('calc-JARABE').style.display = 'none';
+      document.getElementById('calc-STOCK').style.display = 'none';
+      document.getElementById('calc-ESQUEMA').style.display = 'none';
+      document.getElementById('calc-' + seccionId).style.display = 'block';
+      
+      document.querySelectorAll('.sub-calc').forEach(b => b.classList.remove('activa'));
+      document.getElementById('sub' + (seccionId.charAt(0) + seccionId.slice(1).toLowerCase())).classList.add('activa');
+    }
+
+    // =================================================================
+    // 🌟 MOTOR DE CALCULADORA CLÍNICA V2 (FARMAPERFIL)
+    // =================================================================
+    const DB_MEDS = { "Salbutamol 100 mcg": 200, "Bromuro Ipratropio 20 mcg": 200, "Budesonida 200 mcg": 120, "Fluticasona 125 mcg": 120, "Salmeterol / Fluticasona 25/125 mcg": 120, "Salmeterol / Fluticasona 25/250 mcg": 120, "Tiotropio / Olodaterol 2.5/2.5 mcg": 30, "Budesonida / Formoterol 160/4.5 mcg": 60, "Budesonida / Formoterol 320/9 mcg": 120 };
+    const DB_LIQUIDOS = { "Amoxicilina 250 mg/5 mL": { mg: 250, ml: 5, total: 60 }, "Amoxicilina 500 mg/5 mL": { mg: 500, ml: 5, total: 60 }, "Ácido Ursodesoxicólico 250 mg/5 mL": { mg: 250, ml: 5, total: 200 }, "Ácido Valproico 250 mg/5 mL": { mg: 250, ml: 5, total: 120 }, "Azitromicina 200 mg/5 mL": { mg: 200, ml: 5, total: 30 }, "Cefadroxilo 250 mg/5 mL": { mg: 250, ml: 5, total: 60 }, "Levetiracetam 500 mg/5 mL": { mg: 500, ml: 5, total: 300 }, "Paracetamol 120 mg/5 mL": { mg: 120, ml: 5, total: 60 }, "N-Acetil-Cisteína 100 mg/mL": { mg: 100, ml: 1, total: 60 }, "Sulfato Ferroso 125 mg/1 mL": { mg: 125, ml: 1, total: 30, gotas: "" }, "Sulfato de Zinc 5 mg/1 mL": { mg: 5, ml: 1, total: 30, gotas: "" }, "Vitamina ACD 2500 UI/1 mL": { mg: 2500, ml: 1, total: 30, gotas: "" }, "Risperidona 1 mg/mL": { mg: 1, ml: 1, total: 30, gotas: "" }, "Tramadol 100 mg/1 mL": { mg: 100, ml: 1, total: 10, gotas: "" }, "BioGaia (Probiótico)": { biogaia: true }};
+
+    function poblarListasCalc() {
+      const sStock = document.getElementById('selectMed');
+      const sJar = document.getElementById('selectJarabe');
+      for (let m in DB_MEDS) { let opt = document.createElement('option'); opt.value = m; opt.text = m; sStock.appendChild(opt); }
+      for (let j in DB_LIQUIDOS) { let opt = document.createElement('option'); opt.value = j; opt.text = j; sJar.appendChild(opt); }
+      agregarFilaEsquema(); // Inyecta la primera fila de corticoides
+    }
+
+    function autoCompletarJarabe() {
+      const val = document.getElementById('selectJarabe').value;
+      const j = DB_LIQUIDOS[val];
+      const isBioGaia = val === "BioGaia (Probiótico)";
+      if (isBioGaia) {
+        document.getElementById('rowJarabeConc').style.display = 'none'; 
+        document.getElementById('colJarabeTotal').style.display = 'none'; 
+        document.getElementById('colUnidadJarabe').style.display = 'none';
+        document.getElementById('rowGoteroFactor').style.display = 'none';
+        document.getElementById('lblDosisReq').innerText = 'Gotas por vez';
+        document.getElementById('jarabeFrec').value = 24;
+      } else {
+        document.getElementById('rowJarabeConc').style.display = 'flex'; 
+        document.getElementById('colJarabeTotal').style.display = 'block'; 
+        document.getElementById('colUnidadJarabe').style.display = 'block';
+        document.getElementById('rowGoteroFactor').style.display = 'flex';
+        let isUI = val.includes('UI');
+        document.getElementById('lblJarabeMg').innerText = isUI ? 'Conc. (UI)' : 'Conc. (mg)';
+        document.getElementById('lblDosisReq').innerText = 'Dosis Requerida';
+        document.getElementById('unidadJarabe').options[0].text = isUI ? 'UI' : 'mg';
+        if (j) {
+          document.getElementById('jarabeMg').value = j.mg; document.getElementById('jarabeMl').value = j.ml; document.getElementById('jarabeTotal').value = j.total; document.getElementById('jarabeFactorGotas').value = j.gotas || ""; 
+        }
+      }
+    }
+
+    function calcularJarabe() {
+      const val = document.getElementById('selectJarabe').value;
+      let msg = '';
+      if (val === "BioGaia (Probiótico)") {
+        const gotasVez = parseFloat(document.getElementById('jarabeDosis').value);
+        const frec = parseFloat(document.getElementById('jarabeFrec').value);
+        if(!gotasVez || !frec) return;
+        msg = `💧 Administrar: <b>${gotasVez} gotas</b><br>⏳ Duración frasco: <b>${Math.floor(125 / (gotasVez * (24 / frec)))} días</b>`;
+      } else {
+        const pNino = parseFloat(document.getElementById('jarabePesoNino').value);
+        const mgKg = parseFloat(document.getElementById('jarabeMgKg').value);
+        let inputValue = parseFloat(document.getElementById('jarabeDosis').value);
+        const unit = document.getElementById('unidadJarabe').value;
+        if(pNino > 0 && mgKg > 0) { inputValue = pNino * mgKg; document.getElementById('jarabeDosis').value = inputValue.toFixed(1); document.getElementById('unidadJarabe').value = 'mg'; }
+        const mgBase = parseFloat(document.getElementById('jarabeMg').value);
+        const mlBase = parseFloat(document.getElementById('jarabeMl').value);
+        const totalBottle = parseFloat(document.getElementById('jarabeTotal').value);
+        const hours = parseFloat(document.getElementById('jarabeFrec').value);
+        if (!mgBase || !mlBase || !inputValue) return;
+
+        let mlDose = (unit === 'mg' || (pNino && mgKg)) ? (inputValue * mlBase) / mgBase : inputValue;
+        let mgEq = (unit === 'mg' || (pNino && mgKg)) ? inputValue : (inputValue * mgBase) / mlBase;
+        msg = `🚀 Administrar: <b style="font-size: 16px;">${mlDose.toFixed(2)} mL (cc)</b>`;
+        
+        if (unit === 'ml' && !(pNino && mgKg)) { msg += `<br>⚖️ Dosis equivalente: <b>${mgEq.toFixed(1)} ${val.includes('UI') ? 'UI' : 'mg'}</b>`; } 
+        else if (pNino && mgKg) { msg += `<br>⚖️ Requerimiento: <b>${mgEq.toFixed(1)} mg</b>`; }
+
+        const factorGotas = parseFloat(document.getElementById('jarabeFactorGotas').value) || 0; 
+        if (factorGotas > 0) msg += `<br>💧 Equivale a: <b>${Math.round(mlDose * factorGotas)} gotas</b> <small style="opacity:0.8">(${factorGotas} gts/mL)</small>`;
+        else if (mlDose <= 3) msg += `<br><small style="color: var(--accent-red);">⚠️ Indica cuántas gotas son 1 mL en el envase para ver equivalencia.</small>`;
+        
+        if (totalBottle && hours) msg += `<br>⏳ Duración frasco: <b>${Math.floor(totalBottle / (mlDose * (24 / hours)))} días</b>`;
+      }
+      const el = document.getElementById('resJarabe'); el.innerHTML = msg; el.style.display = 'block';
+    }
+
+    function cargarDatosMed() { const med = document.getElementById('selectMed').value; if(med) { document.getElementById('totalEnvase').value = DB_MEDS[med]; document.getElementById('lblStockDosis').innerText = "Puffs por vez"; } }
+    
+    function calcularDuracion() { 
+      const c = parseFloat(document.getElementById('cantVez').value), h = parseFloat(document.getElementById('frecHoras').value), t = parseFloat(document.getElementById('totalEnvase').value); 
+      if(!c || !h || !t) return; 
+      const el = document.getElementById('resInhala'); el.innerHTML = `⏳ Autonomía Estimada: <b style="font-size: 16px;">${Math.floor(t / ((24/h) * c))} días</b>`; el.style.display = 'block';
+    }
+
+    function agregarFilaEsquema() {
+        const cont = document.getElementById('esquemaContenedor');
+        const filas = cont.querySelectorAll('.esquema-row');
+        let fechaInicioSugerida = "";
+        
+        // UX Inteligente: Leer la última fecha de término y sumar 1 día
+        if (filas.length > 0) {
+            const ultimaFila = filas[filas.length - 1];
+            const ultimaFechaTermino = ultimaFila.querySelector('.eq-termino').value;
+            if (ultimaFechaTermino) {
+                let d = new Date(ultimaFechaTermino + "T12:00:00Z"); 
+                d.setDate(d.getDate() + 1);
+                fechaInicioSugerida = d.toISOString().split('T')[0];
+            }
+        }
+        
+        // Si es el primer escalón o el anterior no tiene fecha, usar hoy
+        if (!fechaInicioSugerida) {
+            let d = new Date(); 
+            const offset = d.getTimezoneOffset() * 60000; 
+            fechaInicioSugerida = (new Date(d - offset)).toISOString().split('T')[0];
+        }
+
+        const num = filas.length + 1;
+        const html = `
+        <div class="esquema-row" style="background: #ffffff; border: 1px solid #d0e8fc; padding: 15px; border-radius: 14px; margin-bottom: 15px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+            <div style="position: absolute; top: -10px; left: 15px; background: #0277bd; color: #fff; padding: 3px 10px; border-radius: 6px; font-size: 9px; font-weight: 900; letter-spacing: 1px;">ESCALÓN ${num}</div>
+            <button onclick="this.closest('.esquema-row').remove(); calcularEsquema(false);" style="position: absolute; right: 10px; top: 10px; background: #fadadd; color: #d32f2f; border: none; border-radius: 8px; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center;"><span class="material-icons-round" style="font-size: 17px;">delete_outline</span></button>
+            <div class="fp-row" style="margin-top: 8px; padding-right: 35px;">
+                <div class="fp-col"><label class="fp-label" style="font-size: 9px;">Fecha Inicio</label><div class="fp-input-pill" style="height: 40px; background: #f4f8fc !important; margin-bottom: 10px;"><input type="date" class="eq-inicio" style="font-size: 12px; font-weight: 800; color: #0277bd !important;" value="${fechaInicioSugerida}" onchange="calcularEsquema(false)"></div></div>
+                <div class="fp-col"><label class="fp-label" style="font-size: 9px;">Fecha Término</label><div class="fp-input-pill" style="height: 40px; background: #f4f8fc !important; margin-bottom: 10px;"><input type="date" class="eq-termino" style="font-size: 12px; font-weight: 800; color: #0277bd !important;" onchange="calcularEsquema(false)"></div></div>
+            </div>
+            <div class="fp-row">
+                <div class="fp-col" style="flex: 1.5;"><label class="fp-label" style="font-size: 9px;">Dosis (mg)</label><div class="fp-input-pill" style="height: 40px; background: #f4f8fc !important; margin-bottom: 0;"><input type="number" class="eq-dosis" placeholder="Ej: 15" oninput="calcularEsquema(false)"></div></div>
+                <div class="fp-col" style="flex: 1;"><label class="fp-label" style="font-size: 9px;">Frecuencia</label><div class="fp-input-pill" style="height: 40px; background: #f4f8fc !important; margin-bottom: 0;"><select class="eq-frecuencia" onchange="calcularEsquema(false)"><option value="1">c/24h</option><option value="2">c/12h</option><option value="3">c/8h</option><option value="4">c/6h</option></select></div></div>
+            </div>
+            <div class="subtotal-escalon" style="background: #e1f5fe; border: 1px dashed #58b0f6; border-radius: 8px; padding: 8px; margin-top: 12px; font-size: 12px; text-align: center; color: #1c2833; display: none; font-weight: 700;"></div>
+        </div>`;
+        const div = document.createElement('div'); div.innerHTML = html.trim(); cont.appendChild(div.firstChild);
+    }
+
+    function calcularEsquema(hacerScroll) {
+        const filas = document.querySelectorAll('.esquema-row');
+        const resBox = document.getElementById('resEsquema');
+        let masaTotal = 0, error = false, opB_20mg_total = 0, opB_5mg_total = 0;
+        
+        filas.forEach((fila) => {
+            const i = fila.querySelector('.eq-inicio').value, t = fila.querySelector('.eq-termino').value;
+            const dos = parseFloat(fila.querySelector('.eq-dosis').value), fr = parseFloat(fila.querySelector('.eq-frecuencia').value);
+            const sub = fila.querySelector('.subtotal-escalon');
+            
+            if (!i || !t || isNaN(dos) || dos <= 0) { error = true; sub.style.display = 'none'; } 
+            else {
+                const d1 = new Date(i + "T12:00:00Z"), d2 = new Date(t + "T12:00:00Z");
+                if (d2 < d1) { error = true; sub.style.display = 'block'; sub.innerHTML = '<span style="color:var(--accent-red);">⚠️ Fechas inválidas</span>'; return; }
+                const diffDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+                const masaEscalon = dos * fr * diffDays;
+                masaTotal += masaEscalon;
+                const dosDia = dos * fr;
+                opB_20mg_total += (Math.floor(dosDia / 10) * 0.5) * diffDays;
+                opB_5mg_total += (Math.ceil((dosDia % 10) / 5)) * diffDays;
+                sub.style.display = 'block'; sub.innerHTML = `<span style="font-size: 15px; color: var(--accent-blue); font-weight: 900;">${masaEscalon} mg</span> &nbsp;➔&nbsp; <span style="color: var(--text-muted);">Mix: <b>${Math.ceil((Math.floor(dosDia / 10) * 0.5) * diffDays)}</b>x20 + <b>${Math.ceil((Math.ceil((dosDia % 10) / 5)) * diffDays)}</b>x5</span>`;
+            }
+        });
+        
+        if (error) { if (hacerScroll) resBox.innerHTML = '<div style="color: var(--accent-red); text-align: center; font-size: 12px; font-weight: bold;">⚠️ Complete correctamente las fechas y dosis.</div>'; else resBox.style.display = 'none'; return; }
+        
+        const msg = `<div style="text-align: center; margin-bottom: 20px; border-bottom: 1px dashed var(--glass-border); padding-bottom: 15px;"><span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 800;">Masa Total Requerida</span><br><b style="font-size: 28px; color: var(--accent-blue);">${masaTotal.toFixed(1)} mg</b></div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="background: rgba(64,196,255,0.1); border: 1px solid var(--accent-blue); padding: 15px; border-radius: 12px;">
+                    <span style="font-size: 10px; color: var(--accent-blue); font-weight: 900;">OPCIÓN A (SOLO 20 MG)</span><br><span style="font-size: 13px; color: var(--text-main); font-weight: 600;">Entregar <b style="font-size: 18px; color: var(--accent-blue);">${Math.ceil(masaTotal / 20)}</b> comp. de 20 mg.</span>
+                </div>
+                <div style="background: rgba(0,230,118,0.1); border: 1px solid var(--accent-green); padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.1);">
+                    <span style="font-size: 10px; color: var(--accent-green); font-weight: 900;">OPCIÓN B (ESQUEMA MIXTO)</span><br><span style="font-size: 13px; color: var(--text-main); font-weight: 600;">Entregar <b style="font-size: 18px; color: var(--accent-green);">${Math.ceil(opB_20mg_total)}</b> comp. de 20 mg + <b style="font-size: 18px; color: var(--accent-green);">${Math.ceil(opB_5mg_total)}</b> comp. de 5 mg.</span>
+                </div>
+                <div style="background: rgba(255,152,0,0.1); border: 1px solid #ff9800; padding: 15px; border-radius: 12px;">
+                    <span style="font-size: 10px; color: #ff9800; font-weight: 900;">OPCIÓN C (SOLO 5 MG)</span><br><span style="font-size: 13px; color: var(--text-main); font-weight: 600;">Entregar <b style="font-size: 18px; color: #ff9800;">${Math.ceil(masaTotal / 5)}</b> comp. de 5 mg.</span>
+                </div>
+            </div>`;
+        resBox.innerHTML = msg; resBox.style.display = 'block';
+        if(hacerScroll) setTimeout(() => resBox.scrollIntoView({ behavior: 'smooth', block: 'end' }), 100);
+    }
+  </script>
+  <!-- Librería CryptoJS para cifrado de datos clínicos -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <!-- Motor Lógico Principal -->
 <script type="module" src="./app.js"></script>
+  
+</body>
+</html>
