@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
 // 1. CONEXIÓN A FIREBASE
 const firebaseConfig = {
@@ -39,35 +39,33 @@ window.generarHashRut = function(rut) {
     return CryptoJS.SHA256(rutLimpio).toString(CryptoJS.enc.Hex);
 };
 
-// 3. FUNCIÓN PARA GUARDAR EN FIREBASE (REEMPLAZA A GOOGLE APPS SCRIPT)
+// 3. FUNCIÓN PARA GUARDAR EN FIREBASE
 window.guardarDispensacionFirebase = async function(item, modulo) {
     try {
-        // 1. Cifrado de grado militar para proteger la Ley 19.628
+        // 1. Cifrado de grado militar
         const rutHash = window.generarHashRut(item.rut);
         const pacienteCifrado = window.cifrarDato(item.paciente);
-        
-        // Encriptamos médico y diagnóstico solo si existen en el módulo actual
         const medicoCifrado = item.medicoTratante ? window.cifrarDato(item.medicoTratante) : "";
         const diagnosticoCifrado = item.diagnostico ? window.cifrarDato(item.diagnostico) : "";
 
         // 2. Ensamblar el documento seguro
         const documentoSeguro = {
-            ...item, // Copia los datos inofensivos (fechas, servicio, medicamento, frascos, dosis)
+            ...item,
             paciente: pacienteCifrado,
-            rut_id: rutHash, // Usamos el Hash como identificador
+            rut_id: rutHash,
             medicoTratante: medicoCifrado,
             diagnostico: diagnosticoCifrado,
             modulo: modulo,
-            fechaRegistroNube: serverTimestamp() // Hora exacta e inalterable del servidor de Google
+            fechaRegistroNube: serverTimestamp() // Usa la hora del servidor de Google
         };
 
-        // 3. Destruir el RUT original en texto plano antes de que viaje a internet
+        // 3. Destruir el RUT en texto plano
         delete documentoSeguro.rut;
 
-        // 4. Inyectar el documento en la base de datos Firestore
+        // 4. Guardar en Firestore
         const docRef = await addDoc(collection(window.db, "tratamientos"), documentoSeguro);
         
-        console.log("Documento encriptado y guardado con éxito. ID:", docRef.id);
+        console.log("Documento guardado con éxito. ID:", docRef.id);
         return { exito: true, id: docRef.id };
 
     } catch (error) {
