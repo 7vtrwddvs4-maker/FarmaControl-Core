@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
 // 1. CONEXIÓN A FIREBASE
 const firebaseConfig = {
@@ -70,6 +70,36 @@ window.guardarDispensacionFirebase = async function(item, modulo) {
 
     } catch (error) {
         console.error("Error crítico de Firebase:", error);
+        return { exito: false, error: error.message };
+    }
+};
+
+// 4. FUNCIÓN PARA OBTENER Y DESCIFRAR REGISTROS
+window.obtenerRegistrosFirebase = async function(modulo) {
+    try {
+        // Consulta a la nube filtrando solo los pacientes del módulo actual (ej. "Inhaladores")
+        const q = query(collection(window.db, "tratamientos"), where("modulo", "==", modulo));
+        const snapshot = await getDocs(q);
+        let datos = [];
+        
+        snapshot.forEach((doc) => {
+            let item = doc.data();
+            item.id = doc.id; // Conservamos el ID único de Firebase para poder editarlo después
+            
+            // Descifrado local (ocurre en la RAM del computador del hospital, no en internet)
+            if (item.paciente) item.paciente = window.descifrarDato(item.paciente);
+            if (item.medicoTratante) item.medicoTratante = window.descifrarDato(item.medicoTratante);
+            if (item.diagnostico) item.diagnostico = window.descifrarDato(item.diagnostico);
+            
+            // Ajustamos el nombre de la fecha para que tu renderizador HTML actual lo reconozca
+            item.fechaDisp = item.fechaDispensacion;
+            
+            datos.push(item);
+        });
+        
+        return { exito: true, datos: datos };
+    } catch (error) {
+        console.error("Error al descargar de Firestore:", error);
         return { exito: false, error: error.message };
     }
 };
