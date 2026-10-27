@@ -879,7 +879,7 @@
       }
 
       document.getElementById("cuerpoTabla").innerHTML = `<tr><td colspan="8" style="color: var(--text-muted); padding: 15px;">Cargando registros de ${moduloActivo}...</td></tr>`;
-      google.script.run.withSuccessHandler(renderizarTabla).obtenerRegistrosUniversal(moduloActivo);
+      window.obtenerRegistrosFirebase(moduloActivo).then(res => renderizarTabla(res));
     }
 
     // --- LÓGICA DE FILAS DINÁMICAS ESTILO PROA ---
@@ -1187,7 +1187,7 @@
     document.getElementById("filtroActivos").addEventListener("change", () => {
       const cuerpo = document.getElementById("cuerpoTabla");
       cuerpo.innerHTML = `<tr><td colspan="8" style="color: var(--text-muted); padding: 15px;"><span class="material-icons-round" style="font-size: 16px; vertical-align: middle;">sync</span> Aplicando filtro...</td></tr>`;
-      google.script.run.withSuccessHandler(renderizarTabla).obtenerRegistrosUniversal(moduloActivo);
+      window.obtenerRegistrosFirebase(moduloActivo).then(res => renderizarTabla(res));
     });
 
     // --- FORMATOS Y BOTONES DE LIMPIEZA DEMOGRÁFICA ---
@@ -1456,7 +1456,7 @@
           
           // Temporalmente deshabilitamos la recarga de la tabla antigua
           // cambiarModulo(moduloActivo); 
-          document.getElementById("cuerpoTabla").innerHTML = `<tr><td colspan="8" style="color: var(--accent-green); padding: 15px; font-weight: bold;"><span class="material-icons-round" style="vertical-align: middle;">cloud_done</span> ¡Guardado en Firebase con éxito! Lectura de tabla en construcción...</td></tr>`;
+          window.obtenerRegistrosFirebase(moduloActivo).then(res => renderizarTabla(res));
           
           return;
         }
