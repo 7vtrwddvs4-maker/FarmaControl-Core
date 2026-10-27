@@ -1478,10 +1478,18 @@
           alert(`Error de red con ${item.medicamento}: ` + err.message); resetBotones();
         };
 
+        // Lógica puente hacia Firebase Firestore
         if (filaEnEdicion && paquetesAEnviar.length === 1) {
-          google.script.run.withSuccessHandler(callbackExito).withFailureHandler(callbackFallo).actualizarDispensacionUniversal(item, moduloActivo, filaEnEdicion);
+          // (La función de actualización la construiremos en el siguiente paso)
+          alert("Función de edición en Firebase en construcción..."); 
         } else {
-          google.script.run.withSuccessHandler(callbackExito).withFailureHandler(callbackFallo).guardarDispensacionUniversal(item, moduloActivo);
+          // Llamada asíncrona a nuestro archivo app.js
+          window.guardarDispensacionFirebase(item, moduloActivo)
+            .then(res => {
+              if (res.exito) callbackExito(res);
+              else callbackFallo(new Error(res.error));
+            })
+            .catch(err => callbackFallo(err));
         }
       };
 
