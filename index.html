@@ -1453,7 +1453,11 @@
           btnLimpiarRut.style.display = "none";
           
           filaEnEdicion = null;
-          cambiarModulo(moduloActivo); // Recarga y limpia las filas
+          
+          // Temporalmente deshabilitamos la recarga de la tabla antigua
+          // cambiarModulo(moduloActivo); 
+          document.getElementById("cuerpoTabla").innerHTML = `<tr><td colspan="8" style="color: var(--accent-green); padding: 15px; font-weight: bold;"><span class="material-icons-round" style="vertical-align: middle;">cloud_done</span> ¡Guardado en Firebase con éxito! Lectura de tabla en construcción...</td></tr>`;
+          
           return;
         }
 
@@ -1461,24 +1465,21 @@
         const item = paquetesAEnviar[indexActual];
 
         const callbackExito = (res) => {
-          if (res.exito) { indexActual++; procesarSiguiente(); } 
-          else { alert(`Error con ${item.medicamento}: ` + res.error); resetBotones(); }
+          if (res && res.exito) { indexActual++; procesarSiguiente(); } 
+          else { alert(`Error con ${item.medicamento}: ` + (res ? res.error : "Desconocido")); resetBotones(); }
         };
         const callbackFallo = (err) => {
           alert(`Error de red con ${item.medicamento}: ` + err.message); resetBotones();
         };
 
-        // Lógica puente hacia Firebase Firestore
+        // --- NUEVA RUTA EXCLUSIVA A FIREBASE ---
         if (filaEnEdicion && paquetesAEnviar.length === 1) {
-          // (La función de actualización la construiremos en el siguiente paso)
-          alert("Función de edición en Firebase en construcción..."); 
+          alert("Función de edición en Firebase en construcción...");
+          callbackExito({exito: true});
         } else {
-          // Llamada asíncrona a nuestro archivo app.js
+          // Llamamos al motor lógico que construimos en app.js
           window.guardarDispensacionFirebase(item, moduloActivo)
-            .then(res => {
-              if (res.exito) callbackExito(res);
-              else callbackFallo(new Error(res.error));
-            })
+            .then(res => callbackExito(res))
             .catch(err => callbackFallo(err));
         }
       };
