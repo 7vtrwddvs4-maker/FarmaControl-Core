@@ -670,36 +670,26 @@
       const inputFecha = document.getElementById("fechaDispensacion");
       inputFecha.valueAsDate = new Date();
       
-      let diaActualRegistrado = new Date().toDateString(); 
-      let versionLocalApp = null; // Memoria para la versión actual del computador
+      // --- SIMULACIÓN TEMPORAL DE DATOS MAESTROS PARA PRUEBA FIREBASE ---
+      const datosSimulados = {
+        exito: true,
+        servicios: ["Medicina", "UCI", "UTI", "URG Adulto", "Pabellón"],
+        digitadores: ["Francisco Barra", "Susana", "Turno Noche"],
+        inhaladores: [
+            {nombre: "Salbutamol 100 mcg", presentacion: 200},
+            {nombre: "Budesonida 200 mcg", presentacion: 120},
+            {nombre: "Bromuro Ipratropio 20 mcg", presentacion: 200}
+        ],
+        casosEspeciales: ["Caso Especial A", "Caso Especial B"],
+        psiquiatria: ["Clonazepam 2 mg", "Sertralina 50 mg"],
+        medicosAlbumina: [
+            {rut: "11111111-1", nombre: "DR. HOUSTON"},
+            {rut: "22222222-2", nombre: "DRA. GREY"}
+        ]
+      };
       
-      // Iniciamos pidiendo la versión en vivo y los datos maestros
-      google.script.run.withSuccessHandler(v => versionLocalApp = v).comprobarVersionEnVivo();
-      google.script.run.withSuccessHandler(inicializarAplicacion).obtenerDatosMaestro();
-
-      setInterval(() => {
-        const fechaRealActual = new Date();
-        if (fechaRealActual.toDateString() !== diaActualRegistrado) {
-          inputFecha.valueAsDate = fechaRealActual; 
-          diaActualRegistrado = fechaRealActual.toDateString(); 
-        }
-
-        // --- NUEVO: VIGILANTE DE ACTUALIZACIONES ---
-        if (versionLocalApp) {
-          google.script.run.withSuccessHandler(versionServidor => {
-            if (versionServidor && versionServidor !== versionLocalApp) {
-              document.getElementById("cartelActualizacion").style.display = "flex";
-            }
-          }).comprobarVersionEnVivo();
-        }
-
-        const buscador = document.getElementById("buscadorTabla");
-        if (buscador && buscador.value.trim() === "") {
-          google.script.run
-            .withSuccessHandler(renderizarTabla)
-            .obtenerRegistrosUniversal(moduloActivo);
-        }
-      }, 120000);
+      // Alimentamos las listas manualmente sin usar google.script.run
+      inicializarAplicacion(datosSimulados);
     });
 
     function inicializarAplicacion(respuesta) {
