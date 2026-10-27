@@ -879,7 +879,11 @@
       }
 
       document.getElementById("cuerpoTabla").innerHTML = `<tr><td colspan="8" style="color: var(--text-muted); padding: 15px;">Cargando registros de ${moduloActivo}...</td></tr>`;
-      window.obtenerRegistrosFirebase(moduloActivo).then(res => renderizarTabla(res));
+      if (typeof window.obtenerRegistrosFirebase === "function") {
+        window.obtenerRegistrosFirebase(moduloActivo).then(res => renderizarTabla(res));
+      } else {
+        window.moduloPendienteCarga = moduloActivo;
+      }
     }
 
     // --- LÓGICA DE FILAS DINÁMICAS ESTILO PROA ---
@@ -1472,12 +1476,12 @@
           alert(`Error de red con ${item.medicamento}: ` + err.message); resetBotones();
         };
 
-        // --- NUEVA RUTA EXCLUSIVA A FIREBASE ---
+        // --- NUEVA RUTA EXCLUSIVA A FIREBASE (GUARDADO Y EDICIÓN) ---
         if (filaEnEdicion && paquetesAEnviar.length === 1) {
-          alert("Función de edición en Firebase en construcción...");
-          callbackExito({exito: true});
+          window.actualizarDispensacionFirebase(item, moduloActivo, filaEnEdicion)
+            .then(res => callbackExito(res))
+            .catch(err => callbackFallo(err));
         } else {
-          // Llamamos al motor lógico que construimos en app.js
           window.guardarDispensacionFirebase(item, moduloActivo)
             .then(res => callbackExito(res))
             .catch(err => callbackFallo(err));
@@ -1953,12 +1957,12 @@
         document.getElementById('subtituloInforme').innerText = `Medicamento de Alto Costo: Albúmina Humana 20% | Periodo: ${textoTiempo} ${anio}`;
         document.getElementById('tituloKpi1').innerText = `Total Frascos Dispensados (${textoTiempo})`;
         document.getElementById('tituloGrafico2').innerText = "2. Distribución por Diagnóstico Protocolizado";
-        google.script.run.withSuccessHandler(dibujarGraficosInforme).obtenerEstadisticasAlbumina(srv, tiempo, anio);
+        window.obtenerEstadisticasFirebase("Albumina", srv, tiempo, anio).then(res => dibujarGraficosInforme(res));
       } else if (moduloActivo === "Inhaladores") {
         document.getElementById('subtituloInforme').innerText = `Arsenal: Inhaladores y Jarabes | Periodo: ${textoTiempo} ${anio}`;
         document.getElementById('tituloKpi1').innerText = `Total Tratamientos Dispensados (${textoTiempo})`;
         document.getElementById('tituloGrafico2').innerText = "2. Fármacos Más Dispensados (Top 10)";
-        google.script.run.withSuccessHandler(dibujarGraficosInforme).obtenerEstadisticasInhaladores(srv, tiempo, anio);
+        window.obtenerEstadisticasFirebase("Inhaladores", srv, tiempo, anio).then(res => dibujarGraficosInforme(res));
       }
     }
 
