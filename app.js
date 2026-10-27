@@ -38,3 +38,40 @@ window.generarHashRut = function(rut) {
     let rutLimpio = String(rut).replace(/[^0-9Kk]/g, '').toUpperCase();
     return CryptoJS.SHA256(rutLimpio).toString(CryptoJS.enc.Hex);
 };
+
+// 3. FUNCIÓN PARA GUARDAR EN FIREBASE (REEMPLAZA A GOOGLE APPS SCRIPT)
+window.guardarDispensacionFirebase = async function(item, modulo) {
+    try {
+        // 1. Cifrado de grado militar para proteger la Ley 19.628
+        const rutHash = window.generarHashRut(item.rut);
+        const pacienteCifrado = window.cifrarDato(item.paciente);
+        
+        // Encriptamos médico y diagnóstico solo si existen en el módulo actual
+        const medicoCifrado = item.medicoTratante ? window.cifrarDato(item.medicoTratante) : "";
+        const diagnosticoCifrado = item.diagnostico ? window.cifrarDato(item.diagnostico) : "";
+
+        // 2. Ensamblar el documento seguro
+        const documentoSeguro = {
+            ...item, // Copia los datos inofensivos (fechas, servicio, medicamento, frascos, dosis)
+            paciente: pacienteCifrado,
+            rut_id: rutHash, // Usamos el Hash como identificador
+            medicoTratante: medicoCifrado,
+            diagnostico: diagnosticoCifrado,
+            modulo: modulo,
+            fechaRegistroNube: serverTimestamp() // Hora exacta e inalterable del servidor de Google
+        };
+
+        // 3. Destruir el RUT original en texto plano antes de que viaje a internet
+        delete documentoSeguro.rut;
+
+        // 4. Inyectar el documento en la base de datos Firestore
+        const docRef = await addDoc(collection(window.db, "tratamientos"), documentoSeguro);
+        
+        console.log("Documento encriptado y guardado con éxito. ID:", docRef.id);
+        return { exito: true, id: docRef.id };
+
+    } catch (error) {
+        console.error("Error crítico de Firebase:", error);
+        return { exito: false, error: error.message };
+    }
+};
