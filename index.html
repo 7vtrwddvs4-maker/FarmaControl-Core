@@ -298,14 +298,264 @@
     .calc-result { margin-top: 20px; padding: 15px; border-radius: 16px; text-align: center; font-size: 15px; font-weight: 700; display: none; background: var(--panel-bg); border: 2px solid var(--accent-blue); animation: aparecerFila 0.4s ease; }
     body.light-theme .calc-result { background: rgba(255,255,255,0.7); }
 
-    @media screen and (max-width: 1366px) {
-        .header-grid { grid-template-columns: 100px 1fr 200px !important; }
-        .title-cell { flex-direction: column !important; justify-content: center !important; align-items: center !important; font-size: 18px !important; line-height: 1.2 !important; text-align: center !important; }
-        .hospital-logo { font-size: 14px !important; }
-        .theme-toggle-btn { position: absolute !important; right: 15px !important; }
-        .main-content { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
-        .patient-grid { min-width: 900px !important; }
-        table.med-grid { min-width: 1000px !important; }
+    /* =========================================================
+       DISEÑO FARMAPERFIL v4.0 (MODO CLARO POR DEFECTO + SIDEBAR)
+       ========================================================= */
+    body {
+      padding: 14px !important;
+      gap: 14px !important;
+      overflow: hidden !important;
+    }
+
+    body.light-theme {
+      --bg-gradient: linear-gradient(135deg, #d4e3f3, #c5d8ed);
+      --glass-bg: #f5f9fd;
+      --glass-border: #d0dfef;
+      --cell-border: #dce7f3;
+      --panel-bg: #ffffff;
+      --th-bg: #e3effa;
+      --th-dark: #d5e6f7;
+      --hover-bg: rgba(2, 119, 189, 0.04);
+      --text-main: #1c2833;
+      --text-muted: #607d8b;
+      --accent-blue: #0277bd;
+      --accent-green: #1b5e20;
+      --accent-red: #d32f2f;
+    }
+
+    /* Contenedor Izquierdo Principal (Sin scroll general, altura fija 100%) */
+    .main-content {
+      flex: 1;
+      height: 100%;
+      padding: 0 !important;
+      border-radius: 18px !important;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 10px 30px rgba(15, 32, 39, 0.12);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden !important;
+    }
+
+    /* El formulario superior jamás se encoge ni se mueve */
+    #formularioDispensacion {
+      flex-shrink: 0;
+    }
+
+    /* Encabezados de la tabla (Fecha, Paciente, Servicio...) fijos al hacer scroll en la lista */
+    .med-grid thead th {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background-color: var(--th-dark) !important;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Encabezado Superior Unificado */
+    .header-grid {
+      display: grid;
+      grid-template-columns: 180px 1fr 260px 260px;
+      border: none !important;
+      border-bottom: 1px solid var(--cell-border) !important;
+      border-radius: 18px 18px 0 0 !important;
+      background: var(--panel-bg) !important;
+      min-height: 64px;
+    }
+    .header-cell {
+      border-right: 1px solid var(--cell-border) !important;
+      padding: 10px 18px !important;
+    }
+    .title-cell {
+      font-size: 19px !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.8px !important;
+      color: var(--accent-green) !important;
+      justify-content: flex-start !important;
+      padding-left: 24px !important;
+    }
+
+    /* Grilla Demográfica pegada al Header como en FarmaPerfil */
+    .fp-top-sheet {
+      position: relative;
+      z-index: 3000; /* Siempre por encima de los botones y de los fármacos */
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--cell-border);
+      margin-bottom: 14px;
+    }
+
+    /* Fondo 100% opaco y prioridad máxima para todos los menús desplegables */
+    .glass-dropdown {
+      background: #102027 !important;
+      z-index: 99999 !important;
+      border: 1.5px solid var(--accent-blue) !important;
+      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.35) !important;
+    }
+    body.light-theme .glass-dropdown {
+      background: #ffffff !important;
+      box-shadow: 0 14px 35px rgba(15, 32, 39, 0.18) !important;
+    }
+
+    /* Cuando una celda o fila tiene el cursor adentro, sube a primer plano */
+    .patient-cell:focus-within {
+      z-index: 5000 !important;
+    }
+    .fila-medicamento:focus-within {
+      z-index: 2500 !important;
+    }
+    .patient-grid {
+      border: none !important;
+      border-radius: 0 !important;
+      margin-bottom: 0 !important;
+      background: var(--panel-bg) !important;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .patient-cell {
+      border: none !important;
+      border-right: 1px solid var(--cell-border) !important;
+      border-bottom: 1px solid var(--cell-border) !important;
+      border-radius: 0 !important;
+      padding: 10px 18px !important;
+    }
+    .patient-cell:last-child { border-right: none !important; }
+    .patient-cell input {
+      border-radius: 6px !important;
+      background: transparent !important;
+      font-size: 14.5px !important;
+      font-weight: 800 !important;
+      padding: 2px 0 !important;
+    }
+
+    /* Barra de Botones de Colores (Estilo FarmaPerfil) */
+    .fp-action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 18px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .gestion-opciones {
+      display: flex;
+      justify-content: flex-start !important;
+      gap: 10px !important;
+      margin: 0 !important;
+    }
+    .btn-fp-mod {
+      border: none !important;
+      border-radius: 8px !important;
+      padding: 9px 16px !important;
+      font-size: 11.5px !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #ffffff !important;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      opacity: 0.72;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    .btn-fp-mod .material-icons-round { color: #ffffff !important; font-size: 17px !important; }
+    .btn-fp-mod:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-fp-mod.activa {
+      opacity: 1 !important;
+      transform: translateY(-1px);
+      box-shadow: 0 5px 14px rgba(0,0,0,0.22) !important;
+      outline: 2px solid rgba(255,255,255,0.6);
+    }
+    .mod-blue   { background: linear-gradient(135deg, #0288d1, #01579b) !important; }
+    .mod-green  { background: linear-gradient(135deg, #2e7d32, #1b5e20) !important; }
+    .mod-purple { background: linear-gradient(135deg, #7b1fa2, #4a148c) !important; }
+    .mod-amber  { background: linear-gradient(135deg, #ef6c00, #e65100) !important; }
+
+    .cloud-badge {
+      background: rgba(46, 125, 50, 0.12);
+      border: 1px solid rgba(46, 125, 50, 0.3);
+      color: var(--accent-green);
+      padding: 6px 13px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Panel Lateral Derecho (Buscador + Resultados en Tarjetas) */
+    .right-sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--panel-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(15, 32, 39, 0.12);
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      box-sizing: border-box;
+      height: 100%;
+    }
+    .sidebar-tabs {
+      display: flex;
+      border-bottom: 2px solid var(--cell-border);
+      margin-bottom: 12px;
+    }
+    .sidebar-tab {
+      flex: 1;
+      text-align: center;
+      padding: 8px 4px;
+      font-size: 10.5px;
+      font-weight: 900;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2.5px solid transparent;
+      margin-bottom: -2px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .sidebar-tab.activa {
+      color: var(--accent-green);
+      border-bottom-color: var(--accent-green);
+    }
+
+    /* Tarjetas de Resultados estilo DIBEN HP de FarmaPerfil */
+    .fp-side-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--cell-border);
+      border-left: 4px solid var(--accent-blue);
+      border-radius: 10px;
+      padding: 11px 12px;
+      margin-bottom: 9px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .fp-side-card:hover {
+      transform: translateX(3px);
+      border-color: var(--accent-blue);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .fp-badge-orange {
+      background: #ff9800;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 3px 6px;
+      border-radius: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .fp-badge-red { background: #ef5350; color: #fff; font-size: 9px; font-weight: 900; padding: 3px 6px; border-radius: 5px; }
+    .fp-badge-green { background: #2e7d32; color: #fff; font-size: 9px; font-weight: 900; padding: 3px 6px; border-radius: 5px; }
+
+    @media screen and (max-width: 1200px) {
+      body { flex-direction: column; overflow-y: auto !important; height: auto !important; }
+      .right-sidebar { width: 100%; height: 420px; }
+      .header-grid { grid-template-columns: 160px 1fr 220px !important; }
+      .header-cell-alergia { display: none !important; }
     }
   </style>
 </head>
@@ -325,171 +575,208 @@
     <span class="material-icons-round" style="font-size: 26px;">check_circle</span> ¡Paciente Registrado con Éxito!
   </div>
 
+  <!-- PANEL IZQUIERDO PRINCIPAL (ESTILO FARMAPERFIL v4.0) -->
   <div class="main-content">
     
-    <div class="header-grid">
-      <div class="header-cell hospital-logo">
-        <img src="https://hospitalelpino.gob.cl/wphep/wp-content/uploads/2026/04/Logo-Redondo_2026.png" alt="Logo Institucional" style="height: 38px; width: auto; object-fit: contain; border-radius: 50%;">
-        FarmaControl
-      </div>
-      <div class="header-cell title-cell">
-        Control de Tratamientos
-      </div>
-      <div class="header-cell" style="position: relative;">
-        <div class="theme-selector">
-          <button class="theme-btn" id="btnThemeLight" onclick="applyThemeMode('light')" title="Modo Claro">
-            <span class="material-icons-round" style="font-size: 18px;">light_mode</span>
-          </button>
-          <button class="theme-btn active" id="btnThemeAuto" onclick="applyThemeMode('auto')" title="Automático (Detectar Sistema)">
-            <span class="material-icons-round" style="font-size: 18px;">brightness_auto</span>
-          </button>
-          <button class="theme-btn" id="btnThemeDark" onclick="applyThemeMode('dark')" title="Modo Oscuro">
-            <span class="material-icons-round" style="font-size: 18px;">dark_mode</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="gestion-opciones" style="margin-top: 20px;">
-      <div class="gestion-card activa" id="tabInhaladores" onclick="cambiarModulo('Inhaladores')">
-        <span class="material-icons-round" style="color: var(--accent-blue); font-size: 20px; transition: color 0.3s;">medication_liquid</span>
-        <span class="titulo">Inhaladores / Jarabes</span>
-      </div>
-      <div class="gestion-card" id="tabCasosEspeciales" onclick="cambiarModulo('CasosEspeciales')">
-        <span class="material-icons-round" style="color: var(--accent-blue); font-size: 20px; transition: color 0.3s;">fact_check</span>
-        <span class="titulo">Casos Especiales</span>
-      </div>
-      <div class="gestion-card" id="tabPsiquiatria" onclick="cambiarModulo('Psiquiatria')">
-        <span class="material-icons-round" style="color: var(--accent-blue); font-size: 20px; transition: color 0.3s;">psychology</span>
-        <span class="titulo">Psiquiatría</span>
-      </div>
-      <div class="gestion-card" id="tabAlbumina" onclick="cambiarModulo('Albumina')">
-        <span class="material-icons-round" style="color: var(--accent-blue); font-size: 20px; transition: color 0.3s;">water_drop</span>
-        <span class="titulo">Albúmina</span>
-      </div>
+    <form id="formularioDispensacion" style="display: flex; flex-direction: column; margin: 0; position: relative; z-index: 100;">
       
-      <!-- BOTÓN CALCULADORA (Integrado al menú, abre el Modal) -->
-      <div class="gestion-card" onclick="abrirCalculadora()" style="background: rgba(64, 196, 255, 0.1); border-color: var(--accent-blue); border-width: 2px;">
-        <span class="material-icons-round" style="color: var(--accent-blue); font-size: 20px;">calculate</span>
-        <span class="titulo" style="color: var(--accent-blue);">Calculadora Clínica</span>
-      </div>
-      </div>
-      
-    <form id="formularioDispensacion" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px; position: relative; z-index: 100;">
-      
-      <!-- TARJETA 1: IDENTIFICACIÓN DEL PACIENTE -->
-      <div class="glass-panel" style="padding: 18px 20px; position: relative; z-index: 60;">
-        <div style="font-size: 15px; font-weight: 900; color: var(--accent-blue); display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
-          <span class="material-icons-round">badge</span> Identificación del Paciente
-        </div>
-        <div class="patient-grid" style="border: none; background: transparent; margin-bottom: 0; gap: 10px;">
+      <!-- BLOQUE SUPERIOR UNIFICADO: HEADER + GRILLA PACIENTE -->
+      <div class="fp-top-sheet">
+        <div class="header-grid">
+          <div class="header-cell hospital-logo">
+            <img src="https://hospitalelpino.gob.cl/wphep/wp-content/uploads/2026/04/Logo-Redondo_2026.png" alt="Logo Institucional" style="height: 38px; width: auto; object-fit: contain; border-radius: 50%;">
+            <div style="line-height: 1.15; font-size: 13px; color: var(--text-main); font-weight: 800;">Hospital<br>El Pino</div>
+          </div>
           
-          <!-- RUT CON BUSCADOR INTEGRADO TIPO PROA -->
-          <div class="patient-cell" style="border: 1px solid var(--cell-border); border-radius: 8px; z-index: 20;">
-            <div class="cell-label">RUT</div>
+          <div class="header-cell title-cell">
+            CONTROL DE TRATAMIENTOS
+          </div>
+          
+          <!-- Usuario / Digitador Activo + Selector de Tema -->
+          <div class="header-cell" style="justify-content: space-between; gap: 10px;">
+            <div style="text-align: right; line-height: 1.2;">
+              <div id="headerNombreDigitador" style="font-size: 13px; font-weight: 900; color: var(--text-main);">Seleccione Digitador</div>
+              <div style="font-size: 9.5px; font-weight: 800; color: var(--accent-red);">Farmacia Clínica (FarmaControl)</div>
+            </div>
+            <div class="theme-selector" style="position: static;">
+              <button type="button" class="theme-btn" id="btnThemeLight" onclick="applyThemeMode('light')" title="Modo Claro">
+                <span class="material-icons-round" style="font-size: 16px;">light_mode</span>
+              </button>
+              <button type="button" class="theme-btn active" id="btnThemeAuto" onclick="applyThemeMode('auto')" title="Automático">
+                <span class="material-icons-round" style="font-size: 16px;">brightness_auto</span>
+              </button>
+              <button type="button" class="theme-btn" id="btnThemeDark" onclick="applyThemeMode('dark')" title="Modo Oscuro">
+                <span class="material-icons-round" style="font-size: 16px;">dark_mode</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Celda Derecha Estilo Alergia/Observación Rápida -->
+          <div class="header-cell header-cell-alergia" style="gap: 6px;">
+            <span class="material-icons-round" style="color: var(--accent-red); font-size: 18px;">verified_user</span>
+            <span style="font-size: 12px; font-weight: 900; color: var(--accent-red);">Ley 19.628:</span>
+            <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 700;">Cifrado AES-256 Activo</span>
+          </div>
+        </div>
+
+        <!-- GRILLA DEMOGRÁFICA DEL PACIENTE (ESTILO FARMAPERFIL) -->
+        <div class="patient-grid">
+          <div class="patient-cell" style="z-index: 25;">
+            <div class="cell-label"><span class="material-icons-round" style="font-size:14px;">badge</span> RUT PACIENTE</div>
             <div style="position: relative; width: 100%; display: flex; align-items: center;">
-              <input type="text" id="rut" placeholder="Buscar..." required autocomplete="off" style="transition: color 0.3s ease; padding-right: 25px; box-sizing: border-box;">
-              <span class="material-icons-round" id="btnLimpiarRut" style="position: absolute; right: 0; color: var(--text-muted); font-size: 18px; cursor: pointer; display: none;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">close</span>
+              <input type="text" id="rut" placeholder="12345678-9..." required autocomplete="off" style="padding-right: 24px;">
+              <span class="material-icons-round" id="btnLimpiarRut" style="position: absolute; right: 0; color: var(--text-muted); font-size: 18px; cursor: pointer; display: none;">close</span>
               <div id="dd-rut" class="glass-dropdown" style="text-transform: uppercase;"></div>
             </div>
           </div>
 
-          <div class="patient-cell" style="border: 1px solid var(--cell-border); border-radius: 8px;">
-            <div class="cell-label">Nombres</div>
-            <input type="text" id="pacienteNombres" placeholder="Ej: Elsa" required autocomplete="off" style="box-sizing: border-box;">
+          <div class="patient-cell">
+            <div class="cell-label"><span class="material-icons-round" style="font-size:14px;">person</span> NOMBRES</div>
+            <input type="text" id="pacienteNombres" placeholder="Ej: Matilde" required autocomplete="off">
           </div>
           
-          <div class="patient-cell" style="border: 1px solid var(--cell-border); border-radius: 8px;">
-            <div class="cell-label">Apellidos</div>
-            <input type="text" id="pacienteApellidos" placeholder="Ej: Capunta" required autocomplete="off" style="box-sizing: border-box;">
+          <div class="patient-cell">
+            <div class="cell-label"><span class="material-icons-round" style="font-size:14px;">person_outline</span> APELLIDOS</div>
+            <input type="text" id="pacienteApellidos" placeholder="Ej: Figueroa Vega" required autocomplete="off">
           </div>
 
-          <div class="patient-cell" style="border: 1px solid var(--cell-border); border-radius: 8px;">
-            <div class="cell-label">Fecha Ingreso</div>
+          <div class="patient-cell">
+            <div class="cell-label"><span class="material-icons-round" style="font-size:14px;">calendar_today</span> FECHA INGRESO</div>
             <input type="date" id="fechaDispensacion" required>
           </div>
 
-          <div class="patient-cell span-2" style="border: 1px solid var(--cell-border); border-radius: 8px; z-index: 10;">
-            <div class="cell-label">Servicio Actual</div>
-            <input type="text" id="servicio" data-lista="true" placeholder="Seleccione..." required autocomplete="off" style="background-color: transparent;">
-            <div id="dd-servicio" class="glass-dropdown"></div> 
+          <div class="patient-cell span-2" style="z-index: 15;">
+            <div class="cell-label"><span class="material-icons-round" style="font-size:14px;">local_hospital</span> SERVICIO ACTUAL</div>
+            <input type="text" id="servicio" data-lista="true" placeholder="Seleccione servicio..." required autocomplete="off">
+            <div id="dd-servicio" class="glass-dropdown"></div>
           </div>
 
-          <div class="patient-cell span-2" style="border: 1px solid var(--cell-border); border-radius: 8px; z-index: 9;">
-            <div class="cell-label">Digitador Responsable</div>
-            <input type="text" id="digitador" data-lista="true" placeholder="Seleccione..." required autocomplete="off" style="background-color: transparent;">
-            <div id="dd-digitador" class="glass-dropdown"></div> 
+          <div class="patient-cell span-2" style="z-index: 14;">
+            <div class="cell-label"><span class="material-icons-round" style="font-size:14px;">assignment_ind</span> DIGITADOR RESPONSABLE</div>
+            <input type="text" id="digitador" data-lista="true" placeholder="Seleccione TENS / QF..." required autocomplete="off" oninput="document.getElementById('headerNombreDigitador').innerText = this.value || 'Seleccione Digitador'">
+            <div id="dd-digitador" class="glass-dropdown"></div>
           </div>
-          
         </div>
       </div>
 
-      <!-- TARJETA 2: ESQUEMA DE TRATAMIENTO -->
-      <div class="glass-panel" style="padding: 18px 20px; position: relative; z-index: 50;">
-        <div style="font-size: 15px; font-weight: 900; color: var(--accent-blue); display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-          <span class="material-icons-round">vaccines</span> Esquema de Tratamiento Inicial
-        </div>
-        
-        <!-- Contenedor Dinámico para Múltiples Fármacos -->
-        <div id="contenedorMedicamentos" style="display: flex; flex-direction: column; gap: 8px; position: relative;">
-          <!-- Las filas dinámicas se inyectan aquí -->
-        </div>
-
-        <div id="wrapperAgregarFila" style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
-          <button type="button" id="btnAgregarFila" style="background: transparent; color: var(--accent-blue); border: none; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 5px; transition: 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent-blue)'">
-            <span class="material-icons-round" style="font-size: 20px;">add_circle</span> Agregar otro medicamento
+      <!-- BARRA DE BOTONES DE COLORES (MÓDULOS CLÍNICOS) -->
+      <div class="fp-action-bar">
+        <div class="gestion-opciones">
+          <button type="button" class="gestion-card btn-fp-mod mod-blue activa" id="tabInhaladores" onclick="cambiarModulo('Inhaladores')">
+            <span class="material-icons-round">medication_liquid</span>
+            <span class="titulo">Inhaladores / Jarabes</span>
+          </button>
+          <button type="button" class="gestion-card btn-fp-mod mod-green" id="tabCasosEspeciales" onclick="cambiarModulo('CasosEspeciales')">
+            <span class="material-icons-round">fact_check</span>
+            <span class="titulo">Casos Especiales</span>
+          </button>
+          <button type="button" class="gestion-card btn-fp-mod mod-purple" id="tabPsiquiatria" onclick="cambiarModulo('Psiquiatria')">
+            <span class="material-icons-round">psychology</span>
+            <span class="titulo">Psiquiatría</span>
+          </button>
+          <button type="button" class="gestion-card btn-fp-mod mod-amber" id="tabAlbumina" onclick="cambiarModulo('Albumina')">
+            <span class="material-icons-round">water_drop</span>
+            <span class="titulo">Albúmina</span>
           </button>
         </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button id="btnAbrirInforme" type="button" onclick="abrirModalInforme()" style="display: none; background: rgba(2, 119, 189, 0.12); border: 1px solid var(--accent-blue); color: var(--accent-blue); border-radius: 8px; padding: 6px 14px; font-weight: 900; font-size: 11.5px; cursor: pointer; align-items: center; gap: 6px;">
+            <span class="material-icons-round" style="font-size: 16px;">analytics</span> Informes Clínicos
+          </button>
+          <div class="cloud-badge">
+            <span class="material-icons-round" style="font-size: 16px;">cloud_done</span> Nube actualizada
+          </div>
+        </div>
       </div>
 
-      <!-- BOTÓN REGISTRAR V2 (ESTILO PROA) -->
-      <div style="display: flex; justify-content: center; margin-top: -5px; margin-bottom: 8px;">
-        <button type="submit" class="btn-validar" id="btnGuardar" style="width: 380px; max-width: 100%; border: none; border-radius: 30px; font-weight: 800; font-size: 14px; cursor: pointer; padding: 13px 20px; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: center; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.2);">
-          <span class="material-icons-round" style="font-size: 20px;">cloud_upload</span> Registrar en FarmaControl
-        </button>
+      <!-- SECCIÓN DE CARGA DE FÁRMACOS -->
+      <div style="padding: 0 18px; margin-bottom: 12px;">
+        <div style="background: var(--panel-bg); border: 1px solid var(--cell-border); border-radius: 12px; padding: 14px 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="font-size: 13px; font-weight: 900; color: var(--accent-blue); display: flex; align-items: center; gap: 6px; text-transform: uppercase;">
+              <span class="material-icons-round" style="font-size: 18px;">vaccines</span> Esquema de Tratamiento a Registrar
+            </div>
+            <div id="wrapperAgregarFila">
+              <button type="button" id="btnAgregarFila" style="background: rgba(2,119,189,0.08); color: var(--accent-blue); border: 1px dashed var(--accent-blue); border-radius: 8px; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 11.5px; padding: 5px 12px;">
+                <span class="material-icons-round" style="font-size: 16px;">add_circle</span> Añadir Fármaco
+              </button>
+            </div>
+          </div>
+
+          <div id="contenedorMedicamentos" style="display: flex; flex-direction: column; gap: 8px; position: relative;"></div>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+            <button type="submit" class="btn-validar" id="btnGuardar" style="width: 290px; max-width: 100%; border: none; border-radius: 10px; font-weight: 900; font-size: 12.5px; cursor: pointer; padding: 11px 18px; text-transform: uppercase; letter-spacing: 0.6px; display: flex; justify-content: center; align-items: center; gap: 8px;">
+              <span class="material-icons-round" style="font-size: 18px;">cloud_upload</span> Registrar en FarmaControl
+            </button>
+          </div>
+        </div>
       </div>
 
     </form>
 
-    <div class="glass-panel" style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
-      
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <div class="farmacos-title" id="tituloTablaDashboard">
-          <span class="material-icons-round" style="color: var(--accent-blue); margin-right: 8px; font-size: 22px; vertical-align: bottom;">medication_liquid</span> Seguimiento de Inhaladores y Jarabes
-        </div>
-        
-        <div style="display: flex; align-items: center; gap: 20px;">
-          <!-- BOTÓN DE INFORME DIRECTIVO (Solo visible en Albúmina) -->
-          <button id="btnAbrirInforme" type="button" onclick="abrirModalInforme()" style="display: none; background: rgba(64, 196, 255, 0.15); border: 1px solid var(--accent-blue); color: var(--accent-blue); border-radius: 20px; padding: 8px 16px; font-weight: 800; font-size: 13px; cursor: pointer; align-items: center; gap: 6px; transition: all 0.2s;">
-            <span class="material-icons-round" style="font-size: 18px;">analytics</span> Informes Clínicos
-          </button>
-          <label style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 13px; font-weight: 900; cursor: pointer; user-select: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-blue)'" onmouseout="this.style.color='var(--text-muted)'">
-            <input type="checkbox" id="filtroActivos" checked style="accent-color: var(--accent-blue); width: 16px; height: 16px; cursor: pointer;">
+    <!-- TABLA CENTRAL DE SEGUIMIENTO (ESTILO HOJA CLÍNICA CON SCROLL PROPIO) -->
+    <div style="padding: 0 18px 18px 18px; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+      <div style="background: var(--panel-bg); border: 1px solid var(--cell-border); border-radius: 12px; padding: 14px; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-shrink: 0;">
+          <div class="farmacos-title" id="tituloTablaDashboard" style="font-size: 14px;">
+            <span class="material-icons-round" style="color: var(--accent-blue); margin-right: 6px; font-size: 20px; vertical-align: bottom;">medication_liquid</span> Seguimiento de Inhaladores y Jarabes
+          </div>
+          <label style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 12px; font-weight: 800; cursor: pointer; user-select: none;">
+            <input type="checkbox" id="filtroActivos" checked style="accent-color: var(--accent-blue); width: 15px; height: 15px; cursor: pointer;">
             Ocultar Finalizados
           </label>
-          <div style="position: relative; width: 340px;">
-            <span class="material-icons-round" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--accent-blue); font-size: 22px; pointer-events: none;">search</span>
-            <input type="text" id="buscadorTabla" placeholder="Buscar paciente por RUT o Nombre..." autocomplete="off" style="width: 100%; padding: 12px 45px 12px 45px; border-radius: 12px; border: 2px solid var(--accent-blue); background: var(--glass-bg); color: var(--text-main); outline: none; transition: all 0.3s ease; font-weight: 600; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); box-sizing: border-box;">
-            <span class="material-icons-round" id="btnLimpiarBuscador" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 20px; cursor: pointer; display: none; transition: color 0.2s ease;" onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'" title="Borrar búsqueda">close</span>
-          </div>
         </div>
-      </div>
-      
-      <div style="flex: 1; overflow-y: auto;">
-        <table class="med-grid">
-          <thead id="encabezadoTabla">
-            </thead>
-          <tbody id="cuerpoTabla">
-            <tr>
-              <td colspan="7" style="padding: 20px; color: var(--text-muted);">Iniciando motor de carga...</td>
-            </tr>
-          </tbody>
-        </table>
+
+        <div style="flex: 1; min-height: 0; overflow-y: auto; border-radius: 8px;">
+          <table class="med-grid">
+            <thead id="encabezadoTabla"></thead>
+            <tbody id="cuerpoTabla">
+              <tr>
+                <td colspan="8" style="padding: 20px; color: var(--text-muted);">Iniciando motor de carga...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
   </div> <!-- Cierre main-content -->
 
+  <!-- PANEL LATERAL DERECHO (BUSCADOR Y RESULTADOS ESTILO FARMAPERFIL) -->
+  <aside class="right-sidebar">
+    <div style="display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 14.5px; color: var(--accent-green); margin-bottom: 12px;">
+      <span class="material-icons-round" style="font-size: 20px;">dashboard_customize</span> Panel de Control
+    </div>
+
+    <!-- Pestañas de Filtro Rápido en el Panel Lateral -->
+    <div class="sidebar-tabs">
+      <div class="sidebar-tab activa" id="sideTabActivos" onclick="cambiarTabLateral('ACTIVOS')">EN SEGUIMIENTO</div>
+      <div class="sidebar-tab" id="sideTabTodos" onclick="cambiarTabLateral('TODOS')">HISTORIAL TOTAL</div>
+    </div>
+
+    <!-- Buscador Integrado en el Panel Lateral -->
+    <div style="position: relative; width: 100%; margin-bottom: 12px;">
+      <span class="material-icons-round" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--accent-blue); font-size: 19px; pointer-events: none;">search</span>
+      <input type="text" id="buscadorTabla" placeholder="Buscar RUT, Paciente, Fármaco..." autocomplete="off" style="width: 100%; padding: 10px 34px 10px 38px; border-radius: 10px !important; border: 1.5px solid var(--cell-border); background: var(--glass-bg); color: var(--text-main); outline: none; font-size: 12.5px; font-weight: 700; box-sizing: border-box;">
+      <span class="material-icons-round" id="btnLimpiarBuscador" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 18px; cursor: pointer; display: none;" title="Borrar búsqueda">close</span>
+    </div>
+
+    <!-- Contenedor de Tarjetas de Resultados de Búsqueda -->
+    <div id="resultadosLateral" style="flex: 1; overflow-y: auto; padding-right: 2px;">
+      <div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 30px 10px;">
+        Cargando tarjetas clínicas...
+      </div>
+    </div>
+
+    <!-- Botón Calculadora en Esquina Inferior Derecha (Idéntico a FarmaPerfil) -->
+    <div style="padding-top: 12px; border-top: 1px solid var(--cell-border); display: flex; justify-content: flex-end;">
+      <button type="button" onclick="abrirCalculadora()" style="background: linear-gradient(135deg, #0288d1, #0277bd); color: #ffffff; border: none; border-radius: 25px; padding: 11px 22px; font-weight: 900; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 6px 16px rgba(2, 119, 189, 0.35); width: 100%; justify-content: center;">
+        <span class="material-icons-round" style="font-size: 19px;">calculate</span> Calculadora
+      </button>
+    </div>
+  </aside>
   <!-- MODAL CALCULADORA CLÍNICA (CLON FARMAPERFIL EXACTO) -->
   <div id="modalCalculadora" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 32, 39, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 100000; align-items: center; justify-content: center;">
     
@@ -670,26 +957,21 @@
       const inputFecha = document.getElementById("fechaDispensacion");
       inputFecha.valueAsDate = new Date();
       
-      // --- SIMULACIÓN TEMPORAL DE DATOS MAESTROS PARA PRUEBA FIREBASE ---
-      const datosSimulados = {
-        exito: true,
-        servicios: ["Medicina", "UCI", "UTI", "URG Adulto", "Pabellón"],
-        digitadores: ["Francisco Barra", "Susana", "Turno Noche"],
-        inhaladores: [
-            {nombre: "Salbutamol 100 mcg", presentacion: 200},
-            {nombre: "Budesonida 200 mcg", presentacion: 120},
-            {nombre: "Bromuro Ipratropio 20 mcg", presentacion: 200}
-        ],
-        casosEspeciales: ["Caso Especial A", "Caso Especial B"],
-        psiquiatria: ["Clonazepam 2 mg", "Sertralina 50 mg"],
-        medicosAlbumina: [
-            {rut: "11111111-1", nombre: "DR. HOUSTON"},
-            {rut: "22222222-2", nombre: "DRA. GREY"}
-        ]
-      };
-      
-      // Alimentamos las listas manualmente sin usar google.script.run
-      inicializarAplicacion(datosSimulados);
+      // Reloj vigilante: Esperamos a que el motor de Firebase esté 100% conectado
+      const esperarFirebase = setInterval(() => {
+        if (typeof window.obtenerDatosMaestrosFirebase === "function") {
+          clearInterval(esperarFirebase); // Apagamos el reloj
+          
+          // Ahora sí, descargamos las listas reales de forma segura
+          window.obtenerDatosMaestrosFirebase().then(res => {
+            if (res.exito) {
+              inicializarAplicacion(res);
+            } else {
+              console.warn("Faltan datos maestros.");
+            }
+          });
+        }
+      }, 100);
     });
 
     function inicializarAplicacion(respuesta) {
@@ -749,8 +1031,11 @@
         }
       });
 
-      // Al hacer clic en el input, muestra todas las opciones siempre (tenga texto o no)
+      // Al hacer clic en el input, cierra otros menús abiertos y muestra las opciones de este
       input.addEventListener("click", function() {
+        document.querySelectorAll(".glass-dropdown").forEach(d => {
+          if (d !== dropdown) d.style.display = "none";
+        });
         dropdown.innerHTML = "";
         const arrayCompleto = getArrayCallback();
         arrayCompleto.forEach(item => {
@@ -1447,9 +1732,13 @@
           toast.style.bottom = "30px"; toast.style.opacity = "1";
           setTimeout(() => { toast.style.bottom = "-100px"; toast.style.opacity = "0"; }, 3500);
 
+          // 1. Restaurar el texto, color y estado del botón verde
           btnGuardar.disabled = false;
+          btnGuardar.innerHTML = `<span class="material-icons-round" style="font-size: 18px;">cloud_upload</span> Registrar en FarmaControl`;
+          btnGuardar.style.background = "linear-gradient(135deg, #00e676, #00c853)";
+
+          // 2. Limpiar formulario conservando el digitador actual
           const digitadorActual = document.getElementById("digitador").value;
-          
           document.getElementById("formularioDispensacion").reset();
           document.getElementById("fechaDispensacion").valueAsDate = new Date();
           document.getElementById("digitador").value = digitadorActual;
@@ -1457,9 +1746,13 @@
           btnLimpiarRut.style.display = "none";
           
           filaEnEdicion = null;
+
+          // 3. Dejar solo 1 fila limpia de medicamento y restaurar el botón "+ Añadir Fármaco"
+          document.getElementById("contenedorMedicamentos").innerHTML = "";
+          contadorFilas = 0;
+          agregarFilaMedicamento();
           
-          // Temporalmente deshabilitamos la recarga de la tabla antigua
-          // cambiarModulo(moduloActivo); 
+          // 4. Recargar tabla principal y tarjetas del panel derecho
           window.obtenerRegistrosFirebase(moduloActivo).then(res => renderizarTabla(res));
           
           return;
@@ -1678,6 +1971,61 @@
           cuerpo.appendChild(tr);
         });
       }
+      actualizarTarjetasLateral();
+    }
+
+    function cambiarTabLateral(modo) {
+      const check = document.getElementById("filtroActivos");
+      document.getElementById("sideTabActivos").classList.toggle("activa", modo === 'ACTIVOS');
+      document.getElementById("sideTabTodos").classList.toggle("activa", modo === 'TODOS');
+      check.checked = (modo === 'ACTIVOS');
+      check.dispatchEvent(new Event("change"));
+    }
+
+    function actualizarTarjetasLateral() {
+      const contenedor = document.getElementById("resultadosLateral");
+      if (!contenedor) return;
+      const filasVisibles = Array.from(document.querySelectorAll("#cuerpoTabla tr")).filter(tr => tr.style.display !== "none" && tr.cells.length > 1);
+      
+      if (filasVisibles.length === 0) {
+        contenedor.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 25px 10px;">Sin resultados para mostrar.</div>`;
+        return;
+      }
+
+      contenedor.innerHTML = "";
+      filasVisibles.slice(0, 25).forEach(tr => {
+        const fecha = tr.cells[0]?.innerText || "";
+        const pacienteLineas = (tr.cells[1]?.innerText || "").split("\n");
+        const nombrePac = pacienteLineas[0] || "";
+        const rutPac = pacienteLineas[1] || "";
+        const servicio = tr.cells[2]?.innerText || "";
+        const medODiag = tr.cells[3]?.innerText.split("\n")[0] || "";
+        const detalle = tr.cells[4]?.innerText.split("\n")[0] || "";
+        const estadoTexto = tr.cells[6]?.innerText || servicio;
+        const btnAccion = tr.querySelector("button");
+
+        let badgeClass = "fp-badge-orange";
+        if (estadoTexto.includes("TERMINADO") || estadoTexto.includes("EXCEDE") || estadoTexto === "0") badgeClass = "fp-badge-red";
+        else if (estadoTexto.includes("VIGENTE") || parseInt(estadoTexto) > 7) badgeClass = "fp-badge-green";
+
+        const card = document.createElement("div");
+        card.className = "fp-side-card";
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px;">
+            <div style="font-size: 11.5px; font-weight: 900; color: var(--text-main); line-height: 1.2;">${medODiag}</div>
+            <span class="${badgeClass}">${moduloActivo === 'Inhaladores' && !isNaN(estadoTexto) ? estadoTexto + ' DÍAS' : estadoTexto}</span>
+          </div>
+          <div style="font-size: 11px; font-weight: 800; color: var(--accent-blue);">${nombrePac} <span style="color: var(--text-muted); font-weight: 600;">(${rutPac})</span></div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 10.5px; color: var(--text-muted); font-weight: 700;">
+            <span style="color: var(--accent-red); font-weight: 800;">${detalle}</span>
+            <span>${servicio} • ${fecha}</span>
+          </div>
+        `;
+        if (btnAccion) {
+          card.addEventListener("click", () => btnAccion.click());
+        }
+        contenedor.appendChild(card);
+      });
     }
 
     // --- LÓGICA DEL BOTÓN BORRAR (X) DEL BUSCADOR ---
@@ -1723,7 +2071,8 @@
             fila.style.animationDelay = "0ms";
           }
         });
-      }, 350); 
+        actualizarTarjetasLateral();
+      }, 200);
     });
 
     // --- NUEVO: FUNCIÓN PARA CARGAR DATOS A EDICIÓN ---
