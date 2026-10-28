@@ -420,10 +420,17 @@
     .patient-cell:last-child { border-right: none !important; }
     .patient-cell input {
       border-radius: 6px !important;
-      background: transparent !important;
+      background-color: transparent !important;
       font-size: 14.5px !important;
       font-weight: 800 !important;
       padding: 2px 0 !important;
+    }
+    .patient-cell input[data-lista] {
+      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%23888888'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 2px center !important;
+      background-size: 20px !important;
+      padding-right: 22px !important;
     }
 
     /* Barra de Botones de Colores (Estilo FarmaPerfil) */
@@ -642,7 +649,11 @@
 
           <div class="patient-cell">
             <div class="cell-label"><span class="material-icons-round" style="font-size:14px;">calendar_today</span> FECHA INGRESO</div>
-            <input type="date" id="fechaDispensacion" required>
+            <div style="position: relative; display: flex; align-items: center; width: 100%;">
+              <input type="text" id="fechaDispensacion" placeholder="DD/MM/AAAA" maxlength="10" required autocomplete="off" style="width: 100%; padding-right: 24px !important;">
+              <span class="material-icons-round" onclick="document.getElementById('pickerFechaOculto').showPicker()" style="position: absolute; right: 2px; font-size: 17px; color: var(--text-muted); cursor: pointer;" title="Abrir calendario">event</span>
+              <input type="date" id="pickerFechaOculto" tabindex="-1" style="position: absolute; right: 0; width: 0; height: 0; opacity: 0; pointer-events: none;" onchange="sincronizarDesdePicker(this.value)">
+            </div>
           </div>
 
           <div class="patient-cell span-2" style="z-index: 15;">
@@ -954,8 +965,62 @@
     document.addEventListener("DOMContentLoaded", () => {
       applySavedTheme(); 
       
+      window.setearFechaHoy = function() {
+        const hoy = new Date();
+        const dd = String(hoy.getDate()).padStart(2, '0');
+        const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+        const yyyy = hoy.getFullYear();
+        const inputF = document.getElementById("fechaDispensacion");
+        const pickerF = document.getElementById("pickerFechaOculto");
+        if (inputF) inputF.value = `${dd}/${mm}/${yyyy}`;
+        if (pickerF) pickerF.value = `${yyyy}-${mm}-${dd}`;
+      };
+
+      window.sincronizarDesdePicker = function(valISO) {
+        if (!valISO) return;
+        const [yyyy, mm, dd] = valISO.split("-");
+        document.getElementById("fechaDispensacion").value = `${dd}/${mm}/${yyyy}`;
+      };
+
+      window.obtenerFechaISO = function() {
+        const val = document.getElementById("fechaDispensacion").value.trim();
+        if (val.includes("/")) {
+          const [dd, mm, yyyy] = val.split("/");
+          return `${yyyy}-${mm}-${dd}`;
+        }
+        return val;
+      };
+
+      setearFechaHoy();
+
+      // Al recibir foco con Tab o clic, selecciona TODA la fecha de una sola vez
       const inputFecha = document.getElementById("fechaDispensacion");
-      inputFecha.valueAsDate = new Date();
+      inputFecha.addEventListener("focus", function() {
+        setTimeout(() => this.select(), 10);
+      });
+
+      // Auto-formateo mientras escribes números (ej. 28102026 -> 28/10/2026)
+      inputFecha.addEventListener("input", function() {
+        let num = this.value.replace(/\D/g, '').slice(0, 8);
+        if (num.length >= 5) this.value = `${num.slice(0,2)}/${num.slice(2,4)}/${num.slice(4)}`;
+        else if (num.length >= 3) this.value = `${num.slice(0,2)}/${num.slice(2)}`;
+        else this.value = num;
+      });
+
+      // Permitir avanzar con Enter igual que con Tab en los campos del paciente
+      ["rut", "pacienteNombres", "pacienteApellidos", "fechaDispensacion"].forEach((idCampo, idx, arr) => {
+        const el = document.getElementById(idCampo);
+        if (!el) return;
+        el.addEventListener("keydown", function(e) {
+          if (e.key === "Enter") {
+            const ddAbierto = document.getElementById("dd-rut");
+            if (idCampo === "rut" && ddAbierto && ddAbierto.style.display === "block") return;
+            e.preventDefault();
+            const siguienteId = arr[idx + 1] || "servicio";
+            document.getElementById(siguienteId)?.focus();
+          }
+        });
+      });
       
       // Reloj vigilante: Esperamos a que el motor de Firebase esté 100% conectado
       const esperarFirebase = setInterval(() => {
@@ -1619,7 +1684,7 @@
       if (!listaServicios.includes(srvIngresado)) { alert("❌ SERVICIO inválido. Seleccione de la lista."); return; }
       if (!arsenalDigitadores.includes(digIngresado)) { alert("❌ DIGITADOR inválido. Seleccione de la lista."); return; }
 
-      const fechaDispStr = document.getElementById("fechaDispensacion").value;
+      const fechaDispStr = window.obtenerFechaISO();
       const nombresStr = document.getElementById("pacienteNombres").value.trim().toUpperCase();
       const apellidosStr = document.getElementById("pacienteApellidos").value.trim().toUpperCase();
       const pacienteStr = `${nombresStr} ${apellidosStr}`.trim();
@@ -1740,7 +1805,7 @@
           // 2. Limpiar formulario conservando el digitador actual
           const digitadorActual = document.getElementById("digitador").value;
           document.getElementById("formularioDispensacion").reset();
-          document.getElementById("fechaDispensacion").valueAsDate = new Date();
+          window.setearFechaHoy();
           document.getElementById("digitador").value = digitadorActual;
           document.getElementById("rut").style.color = "var(--text-main)";
           btnLimpiarRut.style.display = "none";
@@ -2086,9 +2151,9 @@
         let fechaLimpia = String(reg.fechaDisp).replace(/\//g, "-");
         let fechaPartes = fechaLimpia.split("-");
         if (fechaPartes.length === 3) {
-          if (fechaPartes[0].length === 4) { document.getElementById("fechaDispensacion").value = `${fechaPartes[0]}-${fechaPartes[1]}-${fechaPartes[2]}`; } 
-          else { document.getElementById("fechaDispensacion").value = `${fechaPartes[2]}-${fechaPartes[1]}-${fechaPartes[0]}`; }
-        }
+     if (fechaPartes[0].length === 4) { document.getElementById("fechaDispensacion").value = `${fechaPartes[2]}/${fechaPartes[1]}/${fechaPartes[0]}`; } 
+     else { document.getElementById("fechaDispensacion").value = `${fechaPartes[0]}/${fechaPartes[1]}/${fechaPartes[2]}`; }
+   }
         
         // Heurística chilena: 2 apellidos al editar
         let partesNombre = reg.paciente.trim().split(" ");
@@ -2133,7 +2198,7 @@
         filaEnEdicion = null; 
         
         // 2. Reseteamos la fecha a HOY
-        document.getElementById("fechaDispensacion").valueAsDate = new Date();
+        window.setearFechaHoy();
         
         // 3. Auto-completamos demografía con 2 apellidos
         let partesNombre = reg.paciente.trim().split(" ");
