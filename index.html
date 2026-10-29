@@ -1336,9 +1336,10 @@
         `;
       } else if (moduloActivo !== "Albumina") {
         htmlFila += `
-          <div>
+          <div style="position: relative;">
             <div style="font-size: 10px; color: var(--accent-blue); font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Médico Tratante</div>
-            <input type="text" id="medicoTratante_${id}" required autocomplete="off" placeholder="Ej: Dr. Garibaldi" style="width: 100%; background-color: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 6px; padding: 10px; color: var(--text-main); outline: none; font-size: 14px; font-weight: 600; box-sizing: border-box;" value="${isEdit ? datos.medicoTratante : ''}">
+            <input type="text" id="medicoTratante_${id}" data-lista="true" required autocomplete="off" placeholder="Buscar o escribir médico nuevo..." style="width: 100%; background-color: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 6px; padding: 10px; color: var(--text-main); outline: none; font-size: 14px; font-weight: 600; box-sizing: border-box;" value="${isEdit ? datos.medicoTratante : ''}">
+            <div id="dd-medicoTratante_${id}" class="glass-dropdown"></div>
           </div>
         `;
       }
@@ -1496,6 +1497,10 @@
           if(moduloActivo === "CasosEspeciales") return arsenalCasosEspeciales;
           return arsenalPsiquiatria;
         });
+
+        if (moduloActivo === "CasosEspeciales" || moduloActivo === "Psiquiatria") {
+          initCustomDropdown(`medicoTratante_${id}`, `dd-medicoTratante_${id}`, () => arsenalMedicosAlbumina.map(m => m.nombre));
+        }
 
         if (moduloActivo === "Inhaladores") {
           document.getElementById(`medicamento_${id}`).addEventListener("input", function() {
@@ -1775,13 +1780,39 @@
           if (!medicoAlb || !rutMedicoAlb) {
             alert(`❌ Debe ingresar el Nombre y RUT del Médico tratante.`); document.getElementById(`medicoAlbumina_${id}`).focus(); hayError = true; return;
           }
+
+          // 🌟 AUTO-APRENDIZAJE DE MÉDICO NUEVO (ALBÚMINA)
+          const rutMedLimpio = rutMedicoAlb.replace(/[^0-9K]/g, '');
+          const yaExisteMed = arsenalMedicosAlbumina.some(m => {
+            const mRutLimpio = (m.rut || '').replace(/[^0-9K]/g, '').toUpperCase();
+            return m.nombre.trim().toUpperCase() === medicoAlb || (rutMedLimpio.length > 5 && mRutLimpio === rutMedLimpio && rutMedicoAlb !== "0000000-0");
+          });
+
+          if (!yaExisteMed) {
+            arsenalMedicosAlbumina.push({ nombre: medicoAlb, rut: rutMedicoAlb });
+            if (typeof window.agregarMedicoMaestroFirebase === "function") {
+              window.agregarMedicoMaestroFirebase(medicoAlb, rutMedicoAlb);
+            }
+          }
           
           paquete.diagnostico = diagnostico;
           paquete.frascos = frascos;
           paquete.medicoTratante = medicoAlb;
           paquete.rutMedico = rutMedicoAlb;
         } else {
-          paquete.medicoTratante = String(document.getElementById(`medicoTratante_${id}`).value).trim().toUpperCase();
+          const medGeneral = String(document.getElementById(`medicoTratante_${id}`).value).trim().toUpperCase();
+          paquete.medicoTratante = medGeneral;
+
+          // 🌟 AUTO-APRENDIZAJE DE MÉDICO NUEVO (CASOS ESPECIALES / PSIQUIATRÍA)
+          if (medGeneral) {
+            const yaExisteGen = arsenalMedicosAlbumina.some(m => m.nombre.trim().toUpperCase() === medGeneral);
+            if (!yaExisteGen) {
+              arsenalMedicosAlbumina.push({ nombre: medGeneral, rut: "0000000-0" });
+              if (typeof window.agregarMedicoMaestroFirebase === "function") {
+                window.agregarMedicoMaestroFirebase(medGeneral, "0000000-0");
+              }
+            }
+          }
         }
         
         paquetesAEnviar.push(paquete);
